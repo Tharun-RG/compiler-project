@@ -1,0 +1,2727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regex Engine That Explains Itself - Diagnostic Matcher & Trace Visualizer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons (pinned) -->
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#10b981',
+              600: '#059669',
+              900: '#064e3b',
+            },
+            darkBg: '#0b0f17',
+            darkCard: '#131b2b',
+            darkBorder: '#1e293b',
+            accentOrange: '#f97316',
+            accentRed: '#ef4444',
+            accentBlue: '#38bdf8',
+            accentPurple: '#a855f7'
+          },
+          fontFamily: {
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f4f3f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c8c5c1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #99948f;
+    }
+    body {
+      background:
+        radial-gradient(ellipse at 4% 12%, rgb(255 199 87 / 10%), transparent 28%),
+        radial-gradient(ellipse at 96% 38%, rgb(214 163 43 / 7%), transparent 26%),
+        #ffffff !important;
+      color: #171717;
+    }
+    body[class*="bg-"] {
+      background:
+        radial-gradient(ellipse at 4% 12%, rgb(255 199 87 / 10%), transparent 28%),
+        radial-gradient(ellipse at 96% 38%, rgb(214 163 43 / 7%), transparent 26%),
+        #ffffff !important;
+    }
+    header {
+      position: relative;
+      background-color: rgba(255, 255, 255, 0.96) !important;
+      border-color: #e7e5e2 !important;
+      color: #171717;
+    }
+    header[class*="bg-"] {
+      background-color: rgba(255, 255, 255, 0.96) !important;
+    }
+    header::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 2px;
+      background: linear-gradient(90deg, #f7d879, #dfae39, #b98212);
+      pointer-events: none;
+    }
+    header .bg-gradient-to-tr {
+      background-image: linear-gradient(135deg, #f7d879, #c58d19) !important;
+      box-shadow: 0 8px 20px rgb(197 141 25 / 20%) !important;
+    }
+    [class*="bg-darkCard"],
+    [class*="bg-[#"],
+    [class*="bg-slate-950"],
+    [class*="bg-slate-900"],
+    [class*="bg-slate-800"],
+    [class*="bg-slate-700"] {
+      background-color: #f7f6f4 !important;
+    }
+    [class*="bg-cyan-"],
+    [class*="bg-blue-"],
+    [class*="bg-purple-"],
+    [class*="bg-amber-"],
+    [class*="bg-orange-"],
+    [class*="bg-emerald-"] {
+      background-color: #fff7df !important;
+    }
+    [class*="border-darkBorder"],
+    [class*="border-slate-"] {
+      border-color: #e3e0dc !important;
+    }
+    [class~="text-white"],
+    [class~="text-slate-100"],
+    [class~="text-slate-200"],
+    [class~="text-slate-300"] {
+      color: #202020 !important;
+    }
+    [class~="text-slate-400"],
+    [class~="text-slate-500"] {
+      color: #66615c !important;
+    }
+    [class*="text-cyan-"],
+    [class*="text-blue-"],
+    [class*="text-purple-"],
+    [class*="text-amber-"],
+    [class*="text-orange-"] {
+      color: #946700 !important;
+    }
+    [class*="text-emerald-"],
+    [class*="text-green-"] {
+      color: #166534 !important;
+    }
+    [class*="text-red-"] {
+      color: #991b1b !important;
+    }
+    [class*="bg-orange-"] {
+      background-color: #fff3cf !important;
+    }
+    [class*="bg-orange-600"],
+    [class*="bg-orange-700"] {
+      background-color: #b98212 !important;
+      color: #ffffff !important;
+    }
+    [class*="border-orange-"] {
+      border-color: #e5c66c !important;
+    }
+    [class*="bg-emerald-400"],
+    [class*="bg-emerald-500"],
+    [class*="bg-emerald-600"],
+    [class*="bg-green-400"],
+    [class*="bg-green-500"],
+    [class*="bg-green-600"] {
+      background-color: #166534 !important;
+    }
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-red-600"] {
+      background-color: #991b1b !important;
+    }
+    button[class*="bg-"] {
+      background-color: #f5f4f2 !important;
+      border-color: #dedbd7 !important;
+      box-shadow: none !important;
+      color: #262320 !important;
+    }
+    button[class*="bg-cyan-600"] {
+      background: linear-gradient(110deg, #eac45c, #bd8615) !important;
+      border-color: #bd8615 !important;
+      color: #ffffff !important;
+    }
+    button[class*="text-emerald-"],
+    button[class*="text-green-"] {
+      color: #166534 !important;
+    }
+    button[class*="text-red-"] {
+      color: #991b1b !important;
+    }
+    main > section,
+    main > div > section {
+      position: relative;
+      overflow: visible;
+      border: 0 !important;
+      border-bottom: 1px solid #e5e2de !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      transition: border-color 180ms ease;
+    }
+    main > section[class*="bg-darkCard"],
+    main > div > section[class*="bg-darkCard"] {
+      background: transparent !important;
+    }
+    #overviewSection div[class*="border-slate-200"] {
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    main > section::before,
+    main > div > section::before {
+      content: none;
+    }
+    main > section:hover,
+    main > div > section:hover {
+      border-color: #ded5cc !important;
+      box-shadow: none !important;
+    }
+    header {
+      box-shadow: 0 4px 18px rgb(38 35 32 / 4%);
+    }
+    header h1 {
+      letter-spacing: -0.035em;
+      line-height: 1.2;
+    }
+    main {
+      padding-top: 2rem;
+      padding-bottom: 3rem;
+    }
+    #analysisResults[aria-hidden="true"] {
+      display: none !important;
+    }
+    #analysisResults[aria-hidden="false"] {
+      display: flex !important;
+    }
+    main > section:first-child {
+      background: transparent !important;
+    }
+    main div[class*="bg-[#"],
+    main div[class*="bg-slate-950"],
+    main div[class*="bg-slate-900"],
+    main div[class*="bg-slate-800"],
+    main div[class*="bg-slate-700"],
+    main div[class*="bg-darkCard"] {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+    main > section > div,
+    main > div > section > div {
+      box-shadow: none !important;
+    }
+    #regexInput,
+    #stringInput {
+      min-height: 3.25rem;
+      background-color: #ffffff !important;
+      border-color: #dedbd7 !important;
+      box-shadow: inset 0 1px 2px rgb(38 35 32 / 3%);
+      transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+    }
+    #regexInput:focus,
+    #stringInput:focus {
+      border-color: #bd8615 !important;
+      box-shadow: 0 0 0 3px rgb(189 134 21 / 16%), 0 4px 12px rgb(38 35 32 / 5%);
+    }
+    button {
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgb(38 35 32 / 8%);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid rgb(189 134 21 / 35%);
+      outline-offset: 2px;
+    }
+    #playPauseBtn {
+      box-shadow: 0 5px 14px rgb(189 134 21 / 24%) !important;
+    }
+    #playPauseBtn:hover {
+      box-shadow: 0 8px 18px rgb(189 134 21 / 32%) !important;
+    }
+    #traceTableBody > div:nth-child(even) {
+      background-color: rgb(247 246 244 / 55%);
+    }
+    #traceTableBody > div:hover {
+      background-color: #fff3cf !important;
+    }
+    #automatonSvg {
+      background-image: radial-gradient(#dedbd7 0.7px, transparent 0.7px);
+      background-size: 18px 18px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    .pulsing-state {
+      animation: pulseGlow 1.5s infinite ease-in-out;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 4px #38bdf8); }
+      50% { filter: drop-shadow(0 0 14px #0284c7); }
+    }
+    .backtrack-flash {
+      animation: flashRed 0.8s ease-out;
+    }
+    @keyframes flashRed {
+      0% { filter: drop-shadow(0 0 16px #ef4444); }
+      100% { filter: drop-shadow(0 0 2px #ef4444); }
+    }
+    /* Active-mode styling for the NFA/DFA toggles and trace tabs (kept after the generic overrides) */
+    button.mode-active {
+      background: linear-gradient(110deg, #eac45c, #bd8615) !important;
+      border-color: #bd8615 !important;
+      color: #ffffff !important;
+    }
+    button.tab-active {
+      background-color: #fff3cf !important;
+      border-color: #bd8615 !important;
+    }
+    .growth-input {
+      background: #ffffff;
+      border: 1px solid #dedbd7;
+      border-radius: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.75rem;
+      color: #202020;
+    }
+  </style>
+</head>
+<body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 antialiased">
+
+  <!-- Header -->
+  <header class="border-b border-darkBorder bg-[#0d131f]/90 backdrop-blur sticky top-0 z-50 px-4 py-3 sm:px-6">
+    <div class="max-w-7xl mx-auto flex flex-col items-center justify-center gap-4">
+      <div class="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div class="justify-self-end p-2.5 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-500 shadow-lg shadow-cyan-900/30 ring-1 ring-white/20">
+          <i data-lucide="cpu" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center justify-center gap-2 flex-wrap">
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white text-center">
+              Regex Engine That Explains Itself
+            </h1>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Grid Workspace -->
+  <main class="max-w-7xl mx-auto w-full p-4 sm:p-6 flex-1 flex flex-col gap-6">
+
+    <!-- Overview -->
+    <section id="overviewSection" class="bg-darkCard/80 border border-darkBorder rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur">
+      <div class="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-800">
+            <i data-lucide="scan-search" class="w-3.5 h-3.5"></i>
+            Interactive Regex Lab
+          </div>
+          <h2 class="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">Understand what happens inside a regex.</h2>
+          <p class="mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-slate-600">
+            Build an automaton, compare matching strategies, inspect every execution step, and see where backtracking costs come from.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+          <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white/80 p-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-orange-800"><i data-lucide="workflow" class="h-4 w-4"></i></span>
+            <div><div class="text-xs font-bold text-slate-900">Compile</div><div class="text-[11px] text-slate-500">Regex to AST, NFA and DFA</div></div>
+          </div>
+          <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white/80 p-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-orange-800"><i data-lucide="git-compare-arrows" class="h-4 w-4"></i></span>
+            <div><div class="text-xs font-bold text-slate-900">Compare</div><div class="text-[11px] text-slate-500">Backtracking vs deterministic</div></div>
+          </div>
+          <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white/80 p-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-orange-800"><i data-lucide="activity" class="h-4 w-4"></i></span>
+            <div><div class="text-xs font-bold text-slate-900">Inspect</div><div class="text-[11px] text-slate-500">Trace steps and measure growth</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-200 pt-4 text-xs text-slate-600">
+        <span class="inline-flex items-center gap-2"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white">1</span> Choose a sample or enter values</span>
+        <span class="hidden sm:inline text-slate-300">/</span>
+        <span class="inline-flex items-center gap-2"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">2</span> Run the analysis</span>
+        <span class="hidden sm:inline text-slate-300">/</span>
+        <span class="inline-flex items-center gap-2"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-700">3</span> Explore the results</span>
+      </div>
+    </section>
+
+    <!-- Preset and manual input setup -->
+    <section class="bg-darkCard/80 border border-darkBorder rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur flex flex-col gap-5">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-orange-700">Step 1 · Configure input</p>
+          <h2 class="mt-1 text-xl font-bold tracking-tight text-slate-900">Choose a preset or enter your own values</h2>
+        </div>
+        <p class="text-xs text-slate-500">The analysis opens after you run a valid pattern. The test string may be empty.</p>
+      </div>
+
+      <div>
+        <div class="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <i data-lucide="sparkles" class="h-4 w-4 text-orange-600"></i> Quick presets
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="loadPreset('redos')" class="px-3 py-2 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs transition flex items-center gap-1.5">
+            <i data-lucide="flame" class="w-3.5 h-3.5 text-red-400"></i> Catastrophic ReDoS
+          </button>
+          <button type="button" onclick="loadPreset('divergence')" class="px-3 py-2 rounded-lg bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/60 text-purple-300 text-xs transition flex items-center gap-1.5">
+            <i data-lucide="git-fork" class="w-3.5 h-3.5 text-purple-400"></i> Policy Divergence
+          </button>
+          <button type="button" onclick="loadPreset('walkthrough')" class="px-3 py-2 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 text-xs transition flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> Valid Walkthrough
+          </button>
+          <button type="button" onclick="loadPreset('failure')" class="px-3 py-2 rounded-lg bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/60 text-amber-300 text-xs transition flex items-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i> Rejection Diagnosis
+          </button>
+          <button type="button" onclick="loadPreset('complex')" class="px-3 py-2 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/60 text-blue-300 text-xs transition flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-400"></i> Nested Quantifier
+          </button>
+          <button type="button" onclick="loadPreset('overlap')" class="px-3 py-2 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/60 text-blue-300 text-xs transition flex items-center gap-1.5">
+            <i data-lucide="intersect" class="w-3.5 h-3.5 text-blue-400"></i> Overlapping Classes
+          </button>
+          <button type="button" onclick="loadPreset('poly')" class="px-3 py-2 rounded-lg bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/60 text-amber-300 text-xs transition flex items-center gap-1.5">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-amber-400"></i> Polynomial Blow-up
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        <span class="h-px flex-1 bg-slate-200"></span> Or enter values manually <span class="h-px flex-1 bg-slate-200"></span>
+      </div>
+
+      <form id="analysisSetupForm" onsubmit="submitManualAnalysis(event)" class="flex flex-col gap-4" novalidate>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <label for="regexInput" class="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <i data-lucide="code" class="w-3.5 h-3.5 text-orange-700"></i> REGULAR EXPRESSION PATTERN
+              </label>
+              <span class="text-[11px] text-slate-500 font-mono">| * + ? ( ) [a-z] [^x] . \d \w \s</span>
+            </div>
+            <div class="relative flex items-center">
+              <span class="absolute left-3 font-mono text-orange-700 font-bold">/</span>
+              <input id="regexInput" type="text" autocomplete="off" spellcheck="false"
+                class="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-xl py-3 pl-7 pr-8 font-mono text-slate-900 text-sm tracking-wide transition placeholder-slate-400 outline-none"
+                placeholder="e.g. a(b|c)*d">
+              <span class="absolute right-3 font-mono text-orange-700 font-bold">/</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <label for="stringInput" class="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <i data-lucide="type" class="w-3.5 h-3.5 text-orange-700"></i> TARGET TEST STRING
+              </label>
+              <span id="stringLengthPill" class="text-[11px] text-slate-500 font-mono">Length: 0 chars</span>
+            </div>
+            <input id="stringInput" type="text" autocomplete="off" spellcheck="false"
+              class="w-full bg-white border border-slate-300 focus:border-orange-500 rounded-xl py-3 px-3 font-mono text-slate-900 text-sm tracking-wide transition placeholder-slate-400 outline-none"
+              placeholder="Enter the string to test (may be empty)">
+          </div>
+        </div>
+
+        <div id="setupError" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800" role="alert"></div>
+        <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-200 pt-4">
+          <p class="text-[11px] text-slate-500">Supported: literals, alternation, <code>* + ?</code>, groups, classes with ranges and negation, <code>.</code>, <code>\d \w \s</code> and escapes. <code>^ $ { }</code> are treated as literal characters; the whole string must match.</p>
+          <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition">
+            <i data-lucide="play" class="h-4 w-4"></i> Run analysis
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <div id="analysisResults" class="hidden flex flex-col gap-6" aria-hidden="true" inert>
+      <!-- Live execution telemetry -->
+      <section class="bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl backdrop-blur flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
+            <div class="flex items-center gap-2 bg-[#0a0e17] px-3 py-1.5 rounded-lg border border-slate-800">
+              <span class="text-slate-500 font-medium">Verdict:</span>
+              <span id="verdictBadge" class="font-bold uppercase tracking-wider px-2 py-0.5 rounded text-[11px] bg-red-950 text-red-400 border border-red-800">Ready</span>
+            </div>
+            <div class="flex items-center gap-2 bg-[#0a0e17] px-3 py-1.5 rounded-lg border border-slate-800"><span class="text-slate-500">Total Steps:</span><span id="metricSteps" class="font-mono font-bold text-slate-900">0</span></div>
+            <div class="flex items-center gap-2 bg-[#0a0e17] px-3 py-1.5 rounded-lg border border-slate-800"><span class="text-slate-500">Backtracks:</span><span id="metricBacktracks" class="font-mono font-bold text-orange-700">0</span></div>
+            <div class="flex items-center gap-2 bg-[#0a0e17] px-3 py-1.5 rounded-lg border border-slate-800"><span class="text-slate-500">NFA States:</span><span id="metricNfaStates" class="font-mono font-bold text-orange-700">0</span></div>
+            <div class="flex items-center gap-2 bg-[#0a0e17] px-3 py-1.5 rounded-lg border border-slate-800"><span class="text-slate-500">DFA States:</span><span id="metricDfaStates" class="font-mono font-bold text-orange-700">0</span></div>
+            <div class="flex items-center gap-2 bg-[#0a0e17] px-3 py-1.5 rounded-lg border border-slate-800" title="Does the deterministic DFA matcher give the same verdict as the backtracking NFA matcher?"><span class="text-slate-500">DFA vs NFA:</span><span id="chipDfa" class="font-mono font-bold text-slate-500">-</span></div>
+            <div class="flex items-center gap-2 bg-[#0a0e17] px-3 py-1.5 rounded-lg border border-slate-800" title="Cross-check against the browser's built-in RegExp (full-match). Native RegExp treats ^ $ { } specially, so those can legitimately differ."><span class="text-slate-500">Native RegExp:</span><span id="chipNative" class="font-mono font-bold text-slate-500">-</span></div>
+          </div>
+          <div id="redosBadgeContainer" class="flex items-center gap-2 px-3 py-1 rounded-lg bg-red-950/70 border border-red-700/80 text-red-300">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-red-400 animate-pulse"></i>
+            <span class="font-semibold text-xs tracking-wide uppercase">Analysis ready</span>
+            <span class="text-[10px] bg-red-900/60 text-red-200 px-1.5 py-0.5 rounded font-mono">0 retries</span>
+          </div>
+        </div>
+      </section>
+
+    <!-- NOVEL EXTENSION 1: Blame Heatmap & AST Sub-Expression Attribution -->
+    <section class="bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl backdrop-blur">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-orange-950/60 border border-orange-800/60 text-orange-400">
+            <i data-lucide="flame" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+            Novel Extension 1: Regex Sub-Expression Blame Heatmap
+          </h2>
+          <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono">AST Attribution</span>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-slate-400">
+          <span>Cost Attribution:</span>
+          <div class="flex items-center gap-1 font-mono text-[11px]">
+            <span class="inline-block w-3 h-3 rounded bg-slate-500"></span> 0%
+            <span class="inline-block w-3 h-3 rounded bg-emerald-600 ml-1"></span> 1-25%
+            <span class="inline-block w-3 h-3 rounded bg-amber-500 ml-1"></span> 26-70%
+            <span class="inline-block w-3 h-3 rounded bg-red-600 ml-1"></span> &gt;70% (Hotspot)
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[#0a0e17] p-4 rounded-xl border border-slate-800/80 flex flex-col gap-3">
+        <div class="text-xs text-slate-400">
+          Click any sub-expression below (or a node in the parse tree) to inspect its AST metadata and how much of the backtracking it caused:
+        </div>
+        <!-- Rendered Interactive Heatmap Tokens -->
+        <div id="heatmapContainer" class="flex flex-wrap items-center gap-2 p-3 bg-[#070b12] rounded-lg border border-slate-800 min-h-[50px] font-mono text-base">
+          <!-- Dynamic tokens rendered by JS -->
+        </div>
+        <!-- Active Token Inspector Insight -->
+        <div id="heatmapDetailPanel" class="text-xs text-slate-300 bg-slate-900/70 p-3 rounded-lg border border-slate-700/60 flex items-start gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5"></i>
+          <span id="heatmapDetailText">Select a sub-expression token above to view its backtracking cost breakdown.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOVEL EXTENSION 4: AST Parse Tree Visualizer -->
+    <section class="bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl backdrop-blur flex flex-col gap-3">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-400">
+            <i data-lucide="git-branch" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+            Novel Extension 2: AST Parse Tree Visualizer
+          </h2>
+          <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono">Recursive Descent</span>
+        </div>
+        <span class="text-[11px] text-slate-500">Node colour = share of backtracking. While scrubbing the NFA trace, the node that owns the current NFA state gets a blue outline.</span>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4">
+        <div id="astScroll" class="overflow-auto rounded-xl border border-slate-800 bg-[#070b13] max-h-[560px]">
+          <svg id="astSvg" class="block mx-auto select-none" style="min-height:120px"></svg>
+        </div>
+        <div class="text-[11px] text-slate-600 leading-relaxed">
+          <div class="font-bold text-slate-800 mb-1">Grammar used by the parser</div>
+          <pre class="font-mono text-[11px] whitespace-pre-wrap">Expr   → Term ( '|' Term )*
+Term   → Factor*
+Factor → Atom ( '*' | '+' | '?' )*
+Atom   → char | '.' | escape
+       | '[' class ']'
+       | '(' Expr ')'</pre>
+          <div class="mt-2">Precedence from tightest to loosest: quantifiers, concatenation, alternation. Each AST node then becomes one Thompson fragment.</div>
+          <div class="mt-3 font-bold text-slate-800">Text form</div>
+          <code id="astBracket" class="block font-mono text-[11px] break-all text-slate-700"></code>
+          <div id="astDetailText" class="mt-3 text-slate-700">Click a node to inspect it.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOVEL EXTENSION 2: Time-Travel Scrubber Debugger -->
+    <section class="bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl backdrop-blur flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-cyan-950/60 border border-cyan-800/60 text-cyan-400">
+            <i data-lucide="history" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+            Novel Extension 3: Time-Travel Scrubber Debugger
+          </h2>
+          <span class="text-[10px] text-cyan-400 bg-cyan-950 border border-cyan-800 px-2 py-0.5 rounded font-mono">Deterministic Seek</span>
+        </div>
+
+        <!-- Quick Jump Buttons -->
+        <div class="flex items-center gap-2">
+          <button id="jumpFirstBacktrackBtn" onclick="jumpToFirstBacktrack()" class="text-xs px-2.5 py-1.5 rounded-lg bg-orange-950/60 hover:bg-orange-900/60 border border-orange-700 text-orange-300 flex items-center gap-1.5 transition">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-orange-400"></i> Jump to 1st Backtrack
+          </button>
+          <button id="jumpVerdictBtn" onclick="jumpToVerdict()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 flex items-center gap-1.5 transition">
+            <i data-lucide="fast-forward" class="w-3.5 h-3.5"></i> Jump to Verdict
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrubber Controls and Slider -->
+      <div class="bg-[#0a0e17] p-4 rounded-xl border border-slate-800/80 flex flex-col gap-4">
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <!-- VCR Controls -->
+          <div class="flex items-center gap-1.5">
+            <button onclick="resetPlayback()" title="Reset to start" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300">
+              <i data-lucide="skip-back" class="w-4 h-4"></i>
+            </button>
+            <button onclick="stepBack()" title="Step backward" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button id="playPauseBtn" onclick="togglePlay()" class="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold flex items-center gap-1.5 shadow-md shadow-cyan-900/40">
+              <i id="playIcon" data-lucide="play" class="w-4 h-4 fill-current"></i>
+              <span id="playText" class="text-xs font-mono">Play</span>
+            </button>
+            <button onclick="stepForward()" title="Step forward" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Timeline Seek Slider -->
+          <div class="flex-1 w-full flex items-center gap-3">
+            <span id="currentStepDisplay" class="font-mono text-xs text-cyan-400 font-bold min-w-[80px]">Step 0/0</span>
+            <input id="timelineSlider" type="range" min="0" max="0" value="0" oninput="seekToStep(this.value)"
+              class="w-full accent-cyan-500 bg-slate-800 h-2 rounded-lg cursor-pointer">
+            <span id="totalStepsDisplay" class="font-mono text-xs text-slate-400 min-w-[60px]">0 steps</span>
+          </div>
+
+          <!-- Playback Speed -->
+          <div class="flex items-center gap-1 text-xs">
+            <span class="text-slate-400">Speed:</span>
+            <select id="playbackSpeedSelect" onchange="if (state.isPlaying) startPlayback()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 font-mono text-xs outline-none">
+              <option value="800">0.5x</option>
+              <option value="400" selected>1.0x</option>
+              <option value="180">2.0x</option>
+              <option value="60">5.0x</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live Step Telemetry Card -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-3 border-t border-slate-800 text-xs">
+          <div class="bg-[#0f1624] p-2.5 rounded-lg border border-slate-800/80">
+            <span class="text-slate-400 block text-[11px] mb-1">STRING POINTER CURSOR</span>
+            <div id="pointerPreview" class="font-mono text-emerald-400 tracking-wider font-semibold whitespace-pre-wrap break-all">
+              <!-- Rendered string pointer with caret -->
+            </div>
+          </div>
+          <div class="bg-[#0f1624] p-2.5 rounded-lg border border-slate-800/80">
+            <span class="text-slate-400 block text-[11px] mb-1">ACTION / OUTCOME</span>
+            <div id="currentStepAction" class="font-mono font-bold text-slate-200">
+              Initial State
+            </div>
+          </div>
+          <div class="bg-[#0f1624] p-2.5 rounded-lg border border-slate-800/80">
+            <span class="text-slate-400 block text-[11px] mb-1">CHOICE-POINT STACK</span>
+            <div id="choicePointStackDisplay" class="font-mono text-amber-400 truncate">
+              [Depth: 0]
+            </div>
+          </div>
+          <div class="bg-[#0f1624] p-2.5 rounded-lg border border-slate-800/80">
+            <span class="text-slate-400 block text-[11px] mb-1">STEP DIAGNOSTIC SUMMARY</span>
+            <div id="stepDiagnosisBrief" class="text-slate-300 truncate">
+              Starting pattern evaluation...
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Side-by-Side Automata Visualizer & Matcher Traces -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Automaton Canvas (Interactive Graph) -->
+      <section class="lg:col-span-7 bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl flex flex-col gap-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-400">
+              <i data-lucide="network" class="w-4 h-4"></i>
+            </div>
+            <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+              Automaton State Graph Visualizer
+            </h2>
+          </div>
+
+          <!-- Automaton Mode Switcher (also switches the trace tab so graph and trace never disagree) -->
+          <div class="flex items-center bg-[#0a0e17] p-1 rounded-xl border border-slate-800 text-xs">
+            <button id="viewNfaBtn" onclick="setMode('NFA')" class="px-3 py-1 rounded-lg font-semibold bg-cyan-600 text-white transition">
+              Thompson NFA
+            </button>
+            <button id="viewDfaBtn" onclick="setMode('DFA')" class="px-3 py-1 rounded-lg font-semibold text-slate-400 hover:text-white transition">
+              Subset DFA
+            </button>
+          </div>
+        </div>
+
+        <!-- Automaton Graph Container -->
+        <div class="relative w-full h-[360px] bg-[#070b13] rounded-xl border border-slate-800 overflow-hidden">
+          <div id="graphScroll" class="absolute inset-0 overflow-auto">
+            <svg id="automatonSvg" class="select-none block"></svg>
+          </div>
+
+          <!-- Legend Overlay -->
+          <div class="absolute bottom-2 left-2 bg-[#0d131f]/90 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-400 flex flex-wrap gap-2 backdrop-blur pointer-events-none">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block"></span> Active State</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-900"></span> Accept State</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Backtracked / Failed</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-amber-400 inline-block"></span> &epsilon;-Transition</span>
+          </div>
+
+          <!-- State Inspector Overlay -->
+          <div id="graphNodeTooltip" class="absolute top-2 right-2 bg-slate-900/90 border border-slate-700 text-xs text-slate-300 p-2 rounded-lg max-w-[220px] pointer-events-none hidden">
+            <!-- Node metadata on hover -->
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+          <span id="automatonStatsLabel">NFA: Thompson composition with &epsilon;-transitions</span>
+          <span class="font-mono text-[11px] text-cyan-400">Hover a state for details</span>
+        </div>
+      </section>
+
+      <!-- Side-by-Side Dual Matcher Traces -->
+      <section class="lg:col-span-5 bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-emerald-400">
+              <i data-lucide="split" class="w-4 h-4"></i>
+            </div>
+            <h2 class="text-sm font-bold tracking-tight text-white">
+              Dual Matcher Execution Trace
+            </h2>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">NFA Backtrack vs DFA Linear</span>
+        </div>
+
+        <!-- Trace Comparison Tabs -->
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button id="tabNfaTraceBtn" onclick="setMode('NFA')" class="py-2 px-3 rounded-xl border border-cyan-800 bg-cyan-950/60 text-cyan-300 font-semibold flex items-center justify-between">
+            <span>Backtracking NFA</span>
+            <span id="nfaStepCounterBadge" class="bg-cyan-900/80 text-[10px] px-1.5 py-0.5 rounded font-mono">0 steps</span>
+          </button>
+          <button id="tabDfaTraceBtn" onclick="setMode('DFA')" class="py-2 px-3 rounded-xl border border-slate-800 bg-[#0a0e17] text-slate-400 hover:text-slate-200 font-semibold flex items-center justify-between">
+            <span>Deterministic DFA</span>
+            <span id="dfaStepCounterBadge" class="bg-purple-900/80 text-[10px] px-1.5 py-0.5 rounded font-mono text-purple-200">0 steps</span>
+          </button>
+        </div>
+
+        <!-- Scrollable Trace Event Table -->
+        <div class="bg-[#070b13] border border-slate-800 rounded-xl overflow-hidden flex-1 flex flex-col h-[300px]">
+          <div class="grid grid-cols-12 bg-slate-900/80 text-[11px] font-mono text-slate-400 py-1.5 px-3 border-b border-slate-800 font-semibold">
+            <span class="col-span-2">Step</span>
+            <span class="col-span-2">Pos / Char</span>
+            <span class="col-span-3">State(s)</span>
+            <span class="col-span-5">Action & Result</span>
+          </div>
+          <div id="traceTableBody" class="overflow-y-auto flex-1 font-mono text-xs divide-y divide-slate-800/40">
+            <!-- Dynamic rows populated by JS -->
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-400 flex items-center justify-between">
+          <span id="traceSummaryFootnote">Active step is highlighted</span>
+          <button onclick="exportTraceJson()" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Trace Log (JSON)
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- NOVEL EXTENSION 5: ReDoS Growth Analyzer -->
+    <section class="bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl backdrop-blur flex flex-col gap-3">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-orange-950/60 border border-orange-800/60 text-orange-400">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </div>
+          <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+            Novel Extension 4: ReDoS Growth Analyzer
+          </h2>
+          <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono">Empirical Complexity</span>
+        </div>
+      </div>
+      <p class="text-xs text-slate-600">
+        Runs the pattern on a family of inputs <code>prefix + pump<sup>n</sup> + suffix</code> for growing <code>n</code> and plots how many steps each engine needs.
+        The family is derived from your test string (editable). A backtracking engine that is vulnerable shows a curve that explodes; the DFA stays a straight line.
+      </p>
+      <div class="flex flex-wrap items-center gap-3 text-xs text-slate-700">
+        <label class="flex items-center gap-1.5">Prefix <input id="growthPrefix" class="growth-input w-24" oninput="onGrowthInput()" spellcheck="false"></label>
+        <label class="flex items-center gap-1.5">Pump <input id="growthPump" class="growth-input w-20" oninput="onGrowthInput()" spellcheck="false"></label>
+        <label class="flex items-center gap-1.5">Suffix <input id="growthSuffix" class="growth-input w-24" oninput="onGrowthInput()" spellcheck="false"></label>
+        <label class="flex items-center gap-1.5">Max n <input id="growthMaxN" type="number" min="4" max="24" value="16" class="growth-input w-16" oninput="onGrowthInput()"></label>
+        <label class="flex items-center gap-1.5 cursor-pointer"><input id="growthLog" type="checkbox" onchange="renderGrowthChart()"> Log scale</label>
+        <button type="button" onclick="autoGrowthFamily()" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 text-xs">Auto-pick from test string</button>
+      </div>
+      <div id="growthChart" class="overflow-x-auto rounded-xl border border-slate-800 bg-[#070b13] p-2"></div>
+      <div id="growthSummary" class="text-xs text-slate-700 leading-relaxed"></div>
+    </section>
+
+    <!-- Bottom Row: NOVEL EXTENSION 3 (Policy Comparator) & Diagnostic Natural-Language Explanation -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- NOVEL EXTENSION 3: Multi-Engine Policy Comparator -->
+      <section class="lg:col-span-6 bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-purple-950/60 border border-purple-800/60 text-purple-400">
+              <i data-lucide="git-compare" class="w-4 h-4"></i>
+            </div>
+            <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+              Novel Extension 5: Multi-Engine Policy Comparator
+            </h2>
+          </div>
+          <span class="text-[10px] text-purple-400 bg-purple-950 border border-purple-800 px-2 py-0.5 rounded font-mono">Semantics</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <!-- Leftmost-First (PCRE / Python) -->
+          <div class="bg-[#0a0e17] p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+              <span class="font-bold text-slate-200">Leftmost-First (Perl/PCRE/Python)</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 font-mono">Greedy-First</span>
+            </div>
+            <p class="text-slate-400 text-[11px]">Takes the first alternative at <code class="text-cyan-300">A|B</code> that yields an overall match, skipping remaining branches.</p>
+            <div class="bg-[#070b12] p-2 rounded border border-slate-800/80 font-mono">
+              <div class="text-[11px] text-slate-400">Matched Result (prefix from index 0):</div>
+              <div id="policyPcreResult" class="text-emerald-400 font-bold text-sm break-all">-</div>
+              <div id="policyPcreSteps" class="text-[10px] text-slate-500 mt-0.5">Steps consumed: 0</div>
+            </div>
+          </div>
+
+          <!-- Leftmost-Longest (POSIX / grep) -->
+          <div class="bg-[#0a0e17] p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+              <span class="font-bold text-slate-200">Leftmost-Longest (POSIX awk/grep)</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 font-mono">POSIX standard</span>
+            </div>
+            <p class="text-slate-400 text-[11px]">Explores all alternative branches (memoised on state and position) to guarantee the maximal match length, regardless of order.</p>
+            <div class="bg-[#070b12] p-2 rounded border border-slate-800/80 font-mono">
+              <div class="text-[11px] text-slate-400">Matched Result (prefix from index 0):</div>
+              <div id="policyPosixResult" class="text-purple-300 font-bold text-sm break-all">-</div>
+              <div id="policyPosixSteps" class="text-[10px] text-slate-500 mt-0.5">Steps consumed: 0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divergence Narrative Note -->
+        <div id="policyExplanationBanner" class="p-3 rounded-xl bg-purple-950/30 border border-purple-800/60 text-xs text-purple-200 flex items-start gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5"></i>
+          <span id="policyExplanationText"></span>
+        </div>
+      </section>
+
+      <!-- Diagnostic Natural-Language Explanation Generator -->
+      <section class="lg:col-span-6 bg-darkCard/80 border border-darkBorder rounded-2xl p-5 shadow-xl flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-emerald-400">
+              <i data-lucide="message-square-code" class="w-4 h-4"></i>
+            </div>
+            <h2 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+              Automated Diagnostic Explanation Generator
+            </h2>
+          </div>
+          <span class="text-[10px] text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded font-mono">Natural Language</span>
+        </div>
+
+        <div id="narrativeExplanationBox" class="bg-[#070b13] p-4 rounded-xl border border-slate-800 flex-1 text-xs text-slate-300 leading-relaxed font-sans overflow-y-auto max-h-[220px] flex flex-col gap-2.5">
+          <!-- Dynamically populated human explanation paragraph -->
+        </div>
+
+        <!-- Academic Accreditation Footer -->
+        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+          <span>Module 1 Compiler Design (BCSE307P) &bull; VIT Vellore</span>
+          <span class="font-mono text-slate-400">Under Guidance of Prof. Nithya K</span>
+        </div>
+      </section>
+
+    </div>
+
+    </div>
+  </main>
+
+  <!-- Embedded Core Simulation Engine & Frontend Architecture Script -->
+  <script>
+    /**
+     * =========================================================================
+     * COMPILER DESIGN LAB: REGEX ENGINE THAT EXPLAINS ITSELF
+     * Part A (between the ENGINE markers) is pure logic with no DOM access:
+     *   parser -> AST -> Thompson NFA -> subset-construction DFA ->
+     *   backtracking matcher + deterministic matcher + growth analysis.
+     * Part B is the UI that renders and animates the results.
+     * =========================================================================
+     */
+
+    // ==ENGINE_START==
+
+    class RegexSyntaxError extends Error {
+      constructor(message, pos) {
+        super(message);
+        this.name = 'RegexSyntaxError';
+        this.pos = pos;
+      }
+    }
+
+    // ---- Character-set helpers (UTF-16 code units 0..65535) ----
+    const MAX_CODE = 65535;
+
+    function normalizeRanges(ranges) {
+      const sorted = ranges.map(r => [r[0], r[1]]).sort((a, b) => a[0] - b[0]);
+      const out = [];
+      for (const r of sorted) {
+        if (out.length && r[0] <= out[out.length - 1][1] + 1) {
+          out[out.length - 1][1] = Math.max(out[out.length - 1][1], r[1]);
+        } else {
+          out.push([r[0], r[1]]);
+        }
+      }
+      return out;
+    }
+
+    function complementRanges(ranges) {
+      const norm = normalizeRanges(ranges);
+      const out = [];
+      let next = 0;
+      for (const [lo, hi] of norm) {
+        if (lo > next) out.push([next, lo - 1]);
+        next = hi + 1;
+      }
+      if (next <= MAX_CODE) out.push([next, MAX_CODE]);
+      return out;
+    }
+
+    function makeSym(label, ranges) {
+      return { label, ranges: normalizeRanges(ranges) };
+    }
+
+    function matchCode(sym, code) {
+      const r = sym.ranges;
+      for (let i = 0; i < r.length; i++) {
+        if (code >= r[i][0] && code <= r[i][1]) return true;
+      }
+      return false;
+    }
+
+    function charMatchesSymbol(ch, sym) {
+      return matchCode(sym, ch.charCodeAt(0));
+    }
+
+    const DIGIT = [[48, 57]];
+    const WORD = [[48, 57], [65, 90], [95, 95], [97, 122]];
+    const SPACE = [[9, 13], [32, 32], [160, 160], [0x1680, 0x1680], [0x2000, 0x200a], [0x2028, 0x2029], [0x202f, 0x202f], [0x205f, 0x205f], [0x3000, 0x3000], [0xfeff, 0xfeff]];
+    const LINE_TERMINATORS = [[10, 10], [13, 13], [0x2028, 0x2029]];
+    const ESC_CLASS_FN = {
+      d: () => DIGIT,
+      D: () => complementRanges(DIGIT),
+      w: () => WORD,
+      W: () => complementRanges(WORD),
+      s: () => SPACE,
+      S: () => complementRanges(SPACE)
+    };
+    const ESC_CHARS = { n: 10, t: 9, r: 13, f: 12, v: 11, '0': 0 };
+
+    function literalLabel(ch) {
+      return '.[\\'.includes(ch) ? '\\' + ch : ch;
+    }
+
+    // ---- AST ----
+    let nodeIdCounter = 0;
+    function createAstNode(type, val = null, children = [], start = 0, end = 0) {
+      return { id: ++nodeIdCounter, type, val, children, start, end, rawSpan: '', sym: null, grouped: false };
+    }
+
+    /**
+     * Recursive-descent parser.
+     * Expr   -> Term ('|' Term)*
+     * Term   -> Factor*
+     * Factor -> Atom ('*' | '+' | '?')*
+     * Atom   -> char | '.' | escape | '[' class ']' | '(' Expr ')'
+     * Every node records its [start, end) offsets in the source pattern.
+     * Malformed input throws RegexSyntaxError with the offending position.
+     */
+    function parseRegex(pattern) {
+      nodeIdCounter = 0;
+      let pos = 0;
+
+      const peek = () => (pos < pattern.length ? pattern[pos] : null);
+      const get = () => (pos < pattern.length ? pattern[pos++] : null);
+
+      function parseExpr() {
+        const startPos = pos;
+        const terms = [parseTerm()];
+        while (peek() === '|') {
+          get();
+          terms.push(parseTerm());
+        }
+        if (terms.length === 1) return terms[0];
+        return createAstNode('UNION', null, terms, startPos, pos);
+      }
+
+      function parseTerm() {
+        const startPos = pos;
+        const factors = [];
+        while (peek() !== null && peek() !== '|' && peek() !== ')') {
+          factors.push(parseFactor());
+        }
+        if (factors.length === 0) return createAstNode('EPSILON', 'ε', [], startPos, startPos);
+        if (factors.length === 1) return factors[0];
+        return createAstNode('CONCAT', null, factors, startPos, pos);
+      }
+
+      function parseFactor() {
+        const startPos = pos;
+        let node = parseAtom();
+        while (peek() === '*' || peek() === '+' || peek() === '?') {
+          const op = get();
+          const type = op === '*' ? 'STAR' : op === '+' ? 'PLUS' : 'OPTIONAL';
+          node = createAstNode(type, op, [node], startPos, pos);
+        }
+        return node;
+      }
+
+      function parseClassAtom(open) {
+        const c = get();
+        if (c === null) throw new RegexSyntaxError("Unterminated character class, missing ']'", open);
+        if (c === '\\') {
+          const e = get();
+          if (e === null) throw new RegexSyntaxError('Trailing backslash inside character class', open);
+          if (ESC_CLASS_FN[e]) return { set: ESC_CLASS_FN[e]() };
+          if (Object.prototype.hasOwnProperty.call(ESC_CHARS, e)) return { code: ESC_CHARS[e] };
+          return { code: e.charCodeAt(0) };
+        }
+        return { code: c.charCodeAt(0) };
+      }
+
+      function parseCharClass() {
+        const open = pos;
+        get(); // '['
+        let negated = false;
+        if (peek() === '^') { get(); negated = true; }
+        let ranges = [];
+        while (true) {
+          if (peek() === null) throw new RegexSyntaxError("Unterminated character class, missing ']'", open);
+          if (peek() === ']') break;
+          const a = parseClassAtom(open);
+          if (a.set) { ranges = ranges.concat(a.set); continue; }
+          if (peek() === '-' && pos + 1 < pattern.length && pattern[pos + 1] !== ']') {
+            get(); // '-'
+            const b = parseClassAtom(open);
+            if (b.set) {
+              ranges.push([a.code, a.code], [45, 45]);
+              ranges = ranges.concat(b.set);
+            } else {
+              if (b.code < a.code) throw new RegexSyntaxError('Invalid range in character class (end is before start)', open);
+              ranges.push([a.code, b.code]);
+            }
+          } else {
+            ranges.push([a.code, a.code]);
+          }
+        }
+        get(); // ']'
+        if (ranges.length === 0) throw new RegexSyntaxError('Empty character class', open);
+        const label = pattern.slice(open, pos);
+        const node = createAstNode('CHAR_CLASS', label, [], open, pos);
+        node.sym = makeSym(label, negated ? complementRanges(ranges) : ranges);
+        return node;
+      }
+
+      function parseAtom() {
+        const ch = peek();
+        if (ch === '(') {
+          const open = pos;
+          get();
+          const inner = parseExpr();
+          if (peek() !== ')') throw new RegexSyntaxError("Missing closing ')' for the group opened here", open);
+          get();
+          inner.grouped = true;
+          inner.start = open;
+          inner.end = pos;
+          return inner;
+        }
+        if (ch === '[') return parseCharClass();
+        if (ch === '\\') {
+          const open = pos;
+          get();
+          const e = get();
+          if (e === null) throw new RegexSyntaxError('Trailing backslash with nothing to escape', open);
+          if (ESC_CLASS_FN[e]) {
+            const label = '\\' + e;
+            const node = createAstNode('CHAR_CLASS', label, [], open, pos);
+            node.sym = makeSym(label, ESC_CLASS_FN[e]());
+            return node;
+          }
+          if (e === 'b' || e === 'B' || (e >= '1' && e <= '9')) {
+            throw new RegexSyntaxError(`Unsupported escape '\\${e}' (anchors and back-references are not supported)`, open);
+          }
+          const isCtl = Object.prototype.hasOwnProperty.call(ESC_CHARS, e);
+          const chr = isCtl ? String.fromCharCode(ESC_CHARS[e]) : e;
+          const label = isCtl ? '\\' + e : literalLabel(chr);
+          const node = createAstNode('LITERAL', chr, [], open, pos);
+          node.sym = makeSym(label, [[chr.charCodeAt(0), chr.charCodeAt(0)]]);
+          return node;
+        }
+        if (ch === '.') {
+          const open = pos;
+          get();
+          const node = createAstNode('DOT', '.', [], open, pos);
+          node.sym = makeSym('.', complementRanges(LINE_TERMINATORS));
+          return node;
+        }
+        if (ch === '*' || ch === '+' || ch === '?') {
+          throw new RegexSyntaxError(`Nothing to repeat before '${ch}'`, pos);
+        }
+        // ordinary literal (also ] } { ^ $ which this engine treats literally)
+        const open = pos;
+        get();
+        const node = createAstNode('LITERAL', ch, [], open, pos);
+        node.sym = makeSym(literalLabel(ch), [[ch.charCodeAt(0), ch.charCodeAt(0)]]);
+        return node;
+      }
+
+      const ast = parseExpr();
+      if (pos < pattern.length) {
+        // parseExpr only stops early on an unmatched ')'
+        throw new RegexSyntaxError("Unmatched ')' with no opening '('", pos);
+      }
+
+      (function annotate(n) {
+        n.rawSpan = n.type === 'EPSILON' ? 'ε' : pattern.slice(n.start, n.end);
+        n.children.forEach(annotate);
+      })(ast);
+
+      return ast;
+    }
+
+    /**
+     * --- THOMPSON'S NFA CONSTRUCTOR ---
+     */
+    let nfaStateCounter = 0;
+    function createNfaState(astNodeId = null) {
+      return {
+        id: nfaStateCounter++,
+        transitions: {},        // symbol label -> array of target state ids
+        epsilonTransitions: [], // array of target state ids
+        astNodeId: astNodeId,
+        isAccept: false
+      };
+    }
+
+    function buildNfaFromAst(ast) {
+      nfaStateCounter = 0;
+      const states = [];
+      const syms = {};
+
+      function compile(node) {
+        if (node.sym) {
+          const start = createNfaState(node.id);
+          const end = createNfaState(node.id);
+          states.push(start, end);
+          syms[node.sym.label] = node.sym;
+          start.transitions[node.sym.label] = [end.id];
+          return { start, end, node };
+        }
+
+        if (node.type === 'EPSILON') {
+          const start = createNfaState(node.id);
+          const end = createNfaState(node.id);
+          states.push(start, end);
+          start.epsilonTransitions.push(end.id);
+          return { start, end, node };
+        }
+
+        if (node.type === 'CONCAT') {
+          const frags = node.children.map(compile);
+          for (let i = 0; i < frags.length - 1; i++) {
+            frags[i].end.epsilonTransitions.push(frags[i + 1].start.id);
+          }
+          return { start: frags[0].start, end: frags[frags.length - 1].end, node };
+        }
+
+        if (node.type === 'UNION') {
+          const frags = node.children.map(compile);
+          const start = createNfaState(node.id);
+          const end = createNfaState(node.id);
+          states.push(start, end);
+          frags.forEach(f => {
+            start.epsilonTransitions.push(f.start.id);
+            f.end.epsilonTransitions.push(end.id);
+          });
+          return { start, end, node };
+        }
+
+        if (node.type === 'STAR') {
+          const childFrag = compile(node.children[0]);
+          const start = createNfaState(node.id);
+          const end = createNfaState(node.id);
+          states.push(start, end);
+          start.epsilonTransitions.push(childFrag.start.id);
+          start.epsilonTransitions.push(end.id);
+          childFrag.end.epsilonTransitions.push(childFrag.start.id);
+          childFrag.end.epsilonTransitions.push(end.id);
+          return { start, end, node };
+        }
+
+        if (node.type === 'PLUS') {
+          const childFrag = compile(node.children[0]);
+          const start = createNfaState(node.id);
+          const end = createNfaState(node.id);
+          states.push(start, end);
+          start.epsilonTransitions.push(childFrag.start.id);
+          childFrag.end.epsilonTransitions.push(childFrag.start.id);
+          childFrag.end.epsilonTransitions.push(end.id);
+          return { start, end, node };
+        }
+
+        if (node.type === 'OPTIONAL') {
+          const childFrag = compile(node.children[0]);
+          const start = createNfaState(node.id);
+          const end = createNfaState(node.id);
+          states.push(start, end);
+          start.epsilonTransitions.push(childFrag.start.id);
+          start.epsilonTransitions.push(end.id);
+          childFrag.end.epsilonTransitions.push(end.id);
+          return { start, end, node };
+        }
+
+        throw new Error('Unknown AST node type: ' + node.type);
+      }
+
+      const rootFrag = compile(ast);
+      rootFrag.end.isAccept = true;
+
+      const stateMap = {};
+      states.forEach(s => { stateMap[s.id] = s; });
+
+      return {
+        startId: rootFrag.start.id,
+        acceptId: rootFrag.end.id,
+        states: stateMap,
+        stateList: states,
+        syms
+      };
+    }
+
+    /**
+     * --- SUBSET CONSTRUCTION (NFA -> DFA) ---
+     * The DFA alphabet is NOT the raw symbol labels (those can overlap, e.g. [a-z] and b).
+     * Instead the code-unit space is split into elementary intervals, and intervals that are
+     * matched by exactly the same set of NFA symbols are merged into one alphabet class.
+     * Every input character falls in exactly one class, so the DFA is truly deterministic.
+     */
+    function computeEpsilonClosure(nfa, stateIds) {
+      const closure = new Set(stateIds);
+      const stack = [...stateIds];
+      while (stack.length > 0) {
+        const sid = stack.pop();
+        const st = nfa.states[sid];
+        if (st && st.epsilonTransitions) {
+          st.epsilonTransitions.forEach(nextId => {
+            if (!closure.has(nextId)) {
+              closure.add(nextId);
+              stack.push(nextId);
+            }
+          });
+        }
+      }
+      return Array.from(closure).sort((a, b) => a - b);
+    }
+
+    function computeAlphabetClasses(nfa) {
+      const labels = new Set();
+      nfa.stateList.forEach(s => Object.keys(s.transitions).forEach(l => labels.add(l)));
+      const labelList = [...labels];
+      const pts = new Set([0, MAX_CODE + 1]);
+      labelList.forEach(l => {
+        nfa.syms[l].ranges.forEach(([lo, hi]) => {
+          pts.add(lo);
+          pts.add(Math.min(hi + 1, MAX_CODE + 1));
+        });
+      });
+      const sorted = [...pts].sort((a, b) => a - b);
+      const classes = {};
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const rep = sorted[i];
+        const sig = labelList.filter(l => matchCode(nfa.syms[l], rep)).sort();
+        if (sig.length === 0) continue;
+        const key = sig.join('\u0001');
+        if (!classes[key]) {
+          classes[key] = {
+            key,
+            labels: sig,
+            display: sig.length === 1 ? sig[0] : '⟨' + sig.join(',') + '⟩'
+          };
+        }
+      }
+      return { labelList, classes };
+    }
+
+    const MAX_DFA_STATES = 400;
+
+    function buildDfaFromNfa(nfa) {
+      const dfaStates = [];
+      const dfaStateMap = {};
+      let dfaCounter = 0;
+
+      const startSet = computeEpsilonClosure(nfa, [nfa.startId]);
+      const startDfaState = {
+        id: dfaCounter++,
+        label: `{${startSet.join(',')}}`,
+        nfaSet: startSet,
+        transitions: {},
+        isAccept: startSet.includes(nfa.acceptId)
+      };
+      dfaStates.push(startDfaState);
+      dfaStateMap[startSet.join(',')] = startDfaState;
+      const unvisited = [startDfaState];
+
+      const { labelList, classes } = computeAlphabetClasses(nfa);
+      const classList = Object.values(classes);
+
+      while (unvisited.length > 0) {
+        const curr = unvisited.shift();
+        classList.forEach(cls => {
+          const targetNfaIds = new Set();
+          curr.nfaSet.forEach(sid => {
+            const st = nfa.states[sid];
+            cls.labels.forEach(l => {
+              if (st && st.transitions[l]) st.transitions[l].forEach(t => targetNfaIds.add(t));
+            });
+          });
+          if (targetNfaIds.size === 0) return;
+
+          const targetClosure = computeEpsilonClosure(nfa, Array.from(targetNfaIds));
+          const targetKey = targetClosure.join(',');
+          if (!dfaStateMap[targetKey]) {
+            if (dfaStates.length >= MAX_DFA_STATES) {
+              throw new Error(`DFA construction stopped: more than ${MAX_DFA_STATES} states (the subset construction can blow up exponentially).`);
+            }
+            const ns = {
+              id: dfaCounter++,
+              label: `{${targetClosure.join(',')}}`,
+              nfaSet: targetClosure,
+              transitions: {},
+              isAccept: targetClosure.includes(nfa.acceptId)
+            };
+            dfaStates.push(ns);
+            dfaStateMap[targetKey] = ns;
+            unvisited.push(ns);
+          }
+          curr.transitions[cls.key] = dfaStateMap[targetKey].id;
+        });
+      }
+
+      return {
+        startId: startDfaState.id,
+        states: dfaStates,
+        syms: nfa.syms,
+        labelList,
+        classes
+      };
+    }
+
+    function dfaClassKeyFor(dfa, ch) {
+      const code = ch.charCodeAt(0);
+      return dfa.labelList.filter(l => matchCode(dfa.syms[l], code)).sort().join('\u0001');
+    }
+
+    /**
+     * --- NFA BACKTRACKING MATCHER (simulates PCRE/Python `re`) ---
+     * policy 'FIRST'   : leftmost-first (stop at the first accepting path)
+     * policy 'LONGEST' : explore everything, keep the longest accepted prefix (memoised)
+     * An epsilon cycle that returns to the same (state, position) on the current path is pruned.
+     * When the step budget runs out the run is flagged `aborted` and unwinds silently.
+     */
+    function runNfaBacktracking(nfa, inputStr, policy = 'FIRST', fullMatch = false, opts = {}) {
+      const record = opts.record !== false;
+      const MAX_STEPS = opts.maxSteps || 5000;
+      const trace = [];
+      let stepCounter = 0;
+      let backtrackCount = 0;
+      let aborted = false;
+      const blameMap = {};
+      let matchedSpan = null;
+      let finalAccepted = false;
+      let maxMatch = '';
+      let maxReached = 0;
+      const choiceStack = [];
+      const onPath = new Set();
+      const memo = new Set();
+
+      function logStep(action, stateId, strIdx, result, note, isBacktrack = false) {
+        stepCounter++;
+        if (record) {
+          trace.push({
+            step: stepCounter,
+            strIdx,
+            char: strIdx < inputStr.length ? inputStr[strIdx] : 'EOF',
+            stateId,
+            activeStates: [stateId],
+            action,
+            result,
+            note,
+            choiceDepth: choiceStack.length,
+            isBacktrack
+          });
+        }
+        if (isBacktrack) {
+          backtrackCount++;
+          const astId = nfa.states[stateId] ? nfa.states[stateId].astNodeId : null;
+          if (astId) blameMap[astId] = (blameMap[astId] || 0) + 1;
+        }
+      }
+
+      function expand(stateId, strIdx, currState) {
+        if (strIdx > maxReached) maxReached = strIdx;
+
+        if (currState.isAccept && fullMatch && strIdx < inputStr.length) {
+          logStep('ACCEPT_REJECTED', stateId, strIdx, 'FAIL', `Accept state ${stateId} reached but unconsumed input remains "${inputStr.slice(strIdx)}" (full match required)`);
+        }
+        if (currState.isAccept && (!fullMatch || strIdx === inputStr.length)) {
+          logStep('VERIFY_ACCEPT', stateId, strIdx, 'ACCEPT', `Reached accept state ${stateId} with remainder "${inputStr.slice(strIdx)}"`);
+          if (policy === 'FIRST') {
+            matchedSpan = inputStr.slice(0, strIdx);
+            finalAccepted = true;
+            return true;
+          }
+          if (strIdx >= maxMatch.length) {
+            maxMatch = inputStr.slice(0, strIdx);
+            finalAccepted = true;
+          }
+        }
+
+        const branchOptions = [];
+        currState.epsilonTransitions.forEach(targetId => {
+          branchOptions.push({ type: 'EPSILON', targetId, sym: 'ε' });
+        });
+        if (strIdx < inputStr.length) {
+          const char = inputStr[strIdx];
+          Object.keys(currState.transitions).forEach(label => {
+            if (charMatchesSymbol(char, nfa.syms[label])) {
+              currState.transitions[label].forEach(targetId => {
+                branchOptions.push({ type: 'CHAR', targetId, sym: label, advance: true });
+              });
+            }
+          });
+        }
+
+        if (branchOptions.length === 0) {
+          logStep('DEAD_END', stateId, strIdx, 'FAIL', `No valid transition from state ${stateId} on '${strIdx < inputStr.length ? inputStr[strIdx] : 'EOF'}'`);
+          return false;
+        }
+
+        for (let i = 0; i < branchOptions.length; i++) {
+          const opt = branchOptions[i];
+          choiceStack.push({ stateId, strIdx, alt: i + 1, total: branchOptions.length });
+          let res;
+          if (opt.advance) {
+            logStep('TRANSITION', stateId, strIdx, 'TRY', `Consumed '${inputStr[strIdx]}' on [${opt.sym}] → State ${opt.targetId}`);
+            res = backtrackMatch(opt.targetId, strIdx + 1);
+          } else {
+            logStep('EPSILON_HOP', stateId, strIdx, 'TRY', `Taking ε-transition → State ${opt.targetId}`);
+            res = backtrackMatch(opt.targetId, strIdx);
+          }
+          if (res && policy === 'FIRST') return true;
+          choiceStack.pop();
+          if (aborted) return false;
+
+          if (i < branchOptions.length - 1) {
+            logStep('BACKTRACK', stateId, strIdx, 'BACKTRACK', `Branch ${i + 1} failed. Reverting to State ${stateId} to try alternative ${i + 2}/${branchOptions.length}`, true);
+          } else {
+            logStep('EXHAUSTED_CHOICES', stateId, strIdx, 'BACKTRACK', `All ${branchOptions.length} alternatives exhausted at State ${stateId}. Backtracking to parent frame.`, true);
+          }
+        }
+        return false;
+      }
+
+      function backtrackMatch(stateId, strIdx) {
+        if (aborted) return false;
+        if (stepCounter >= MAX_STEPS) {
+          aborted = true;
+          logStep('LIMIT_EXCEEDED', stateId, strIdx, 'REJECT', `Step budget of ${MAX_STEPS} exhausted. Run aborted (runaway backtracking).`);
+          return false;
+        }
+        const key = stateId + '@' + strIdx;
+        if (policy === 'LONGEST') {
+          if (memo.has(key)) return false;
+          memo.add(key);
+        }
+        if (onPath.has(key)) {
+          logStep('EPSILON_LOOP', stateId, strIdx, 'FAIL', `ε-cycle back to State ${stateId} without consuming input: branch pruned`);
+          return false;
+        }
+        onPath.add(key);
+        const r = expand(stateId, strIdx, nfa.states[stateId]);
+        onPath.delete(key);
+        return r;
+      }
+
+      logStep('START', nfa.startId, 0, 'TRY', `Engine initialized at start state ${nfa.startId}`);
+      const success = backtrackMatch(nfa.startId, 0);
+
+      const finalResult = policy === 'FIRST' ? success : finalAccepted;
+      const finalMatchedText = policy === 'FIRST' ? matchedSpan : maxMatch;
+
+      return {
+        trace,
+        success: finalResult,
+        matchedText: finalMatchedText || '',
+        totalSteps: stepCounter,
+        backtrackCount,
+        blameMap,
+        maxReached,
+        aborted
+      };
+    }
+
+    /**
+     * --- DFA DETERMINISTIC MATCHER (guaranteed linear time) ---
+     */
+    function runDfaDeterministic(dfa, inputStr) {
+      const trace = [];
+      let stepCounter = 0;
+      let currDfaId = dfa.startId;
+      const dfaMap = {};
+      dfa.states.forEach(s => { dfaMap[s.id] = s; });
+
+      trace.push({
+        step: ++stepCounter,
+        strIdx: 0,
+        char: inputStr.length > 0 ? inputStr[0] : 'EOF',
+        stateId: currDfaId,
+        activeStates: dfaMap[currDfaId].nfaSet,
+        action: 'DFA_INIT',
+        result: 'TRY',
+        note: `DFA started in D${currDfaId} = ${dfaMap[currDfaId].label}`,
+        choiceDepth: 0,
+        isBacktrack: false
+      });
+
+      let strIdx = 0;
+      while (strIdx < inputStr.length) {
+        const char = inputStr[strIdx];
+        const currState = dfaMap[currDfaId];
+        const key = dfaClassKeyFor(dfa, char);
+        const nextDfaId = Object.prototype.hasOwnProperty.call(currState.transitions, key) ? currState.transitions[key] : null;
+
+        if (nextDfaId !== null) {
+          currDfaId = nextDfaId;
+          strIdx++;
+          trace.push({
+            step: ++stepCounter,
+            strIdx,
+            char: strIdx < inputStr.length ? inputStr[strIdx] : 'EOF',
+            stateId: currDfaId,
+            activeStates: dfaMap[currDfaId].nfaSet,
+            action: 'DFA_TRANSITION',
+            result: 'TRY',
+            note: `Consumed '${char}' via ${dfa.classes[key].display} → D${currDfaId} ${dfaMap[currDfaId].label}`,
+            choiceDepth: 0,
+            isBacktrack: false
+          });
+        } else {
+          trace.push({
+            step: ++stepCounter,
+            strIdx,
+            char,
+            stateId: currDfaId,
+            activeStates: dfaMap[currDfaId].nfaSet,
+            action: 'DFA_STUCK',
+            result: 'REJECT',
+            note: `Deterministic transition table has no target on '${char}' from D${currDfaId} ${currState.label}`,
+            choiceDepth: 0,
+            isBacktrack: false
+          });
+          return { trace, success: false, totalSteps: stepCounter, finalStateId: currDfaId };
+        }
+      }
+
+      const finalState = dfaMap[currDfaId];
+      const matched = !!finalState.isAccept;
+      trace.push({
+        step: ++stepCounter,
+        strIdx,
+        char: 'EOF',
+        stateId: currDfaId,
+        activeStates: finalState.nfaSet,
+        action: matched ? 'DFA_ACCEPT' : 'DFA_NON_ACCEPT',
+        result: matched ? 'ACCEPT' : 'REJECT',
+        note: matched
+          ? `Input exhausted. D${currDfaId} ${finalState.label} contains the NFA accept state.`
+          : `Input exhausted. D${currDfaId} ${finalState.label} is NOT an accept state.`,
+        choiceDepth: 0,
+        isBacktrack: false
+      });
+
+      return { trace, success: matched, totalSteps: stepCounter, finalStateId: currDfaId };
+    }
+
+    /**
+     * --- ReDoS GROWTH ANALYSIS ---
+     * Runs the engines on prefix + pump^n + suffix for n = 1..maxN and classifies how the
+     * backtracking step count grows.
+     */
+    function buildGrowthFamily(testStr) {
+      if (testStr.length === 0) return { prefix: '', pump: 'a', suffix: '' };
+      let best = { start: 0, len: 0 };
+      for (let i = 0; i < testStr.length;) {
+        let j = i;
+        while (j < testStr.length && testStr[j] === testStr[i]) j++;
+        if (j - i > best.len) best = { start: i, len: j - i };
+        i = j;
+      }
+      if (best.len >= 2) {
+        return {
+          prefix: testStr.slice(0, best.start),
+          pump: testStr[best.start],
+          suffix: testStr.slice(best.start + best.len)
+        };
+      }
+      const idx = Math.floor((testStr.length - 1) / 2);
+      return { prefix: testStr.slice(0, idx), pump: testStr[idx], suffix: testStr.slice(idx + 1) };
+    }
+
+    function classifyGrowth(points) {
+      const valid = points.filter(p => !p.aborted);
+      const hitCap = points.length > valid.length;
+      const firstCap = points.find(p => p.aborted);
+      if (valid.length < 3) {
+        return hitCap
+          ? { kind: 'exponential', detail: `step budget exhausted already at n=${firstCap.n}`, ratio: null, slope: null }
+          : { kind: 'unknown', detail: 'not enough data points', ratio: null, slope: null };
+      }
+      const tail = valid.slice(-5);
+      const rFirst = tail[1].steps / Math.max(1, tail[0].steps);
+      const rLast = tail[tail.length - 1].steps / Math.max(1, tail[tail.length - 2].steps);
+      const a = tail[0];
+      const b = tail[tail.length - 1];
+      const slope = a.steps > 0 && b.steps > 0 && b.n > a.n ? Math.log(b.steps / a.steps) / Math.log(b.n / a.n) : 0;
+
+      if (hitCap && rLast >= 1.25) {
+        return { kind: 'exponential', detail: `x${rLast.toFixed(2)} per extra repetition; step budget exhausted at n=${firstCap.n}`, ratio: rLast, slope };
+      }
+      if (rLast >= 1.4 && rLast / rFirst > 0.93) {
+        return { kind: 'exponential', detail: `x${rLast.toFixed(2)} per extra repetition`, ratio: rLast, slope };
+      }
+      if (slope < 0.25) return { kind: 'constant', detail: 'steps do not depend on n', ratio: rLast, slope };
+      if (slope < 1.35) return { kind: 'linear', detail: `about n^${slope.toFixed(1)}`, ratio: rLast, slope };
+      return { kind: 'polynomial', detail: `about n^${slope.toFixed(1)}`, ratio: rLast, slope };
+    }
+
+    function computeGrowth(nfa, dfa, family, maxN, cap) {
+      const points = [];
+      if (!family.pump) return { family, points, cls: { kind: 'unknown', detail: 'empty pump', ratio: null, slope: null }, cap };
+      for (let n = 1; n <= maxN; n++) {
+        const s = family.prefix + family.pump.repeat(n) + family.suffix;
+        const r = runNfaBacktracking(nfa, s, 'FIRST', true, { record: false, maxSteps: cap });
+        const d = runDfaDeterministic(dfa, s);
+        points.push({ n, len: s.length, steps: r.totalSteps, aborted: r.aborted, accepted: r.success, dfaSteps: d.totalSteps });
+      }
+      return { family, points, cls: classifyGrowth(points), cap };
+    }
+
+    // ==ENGINE_END==
+
+    /**
+     * =========================================================================
+     * PART B: UI
+     * =========================================================================
+     */
+    const $ = id => document.getElementById(id);
+    // Icons are decoration: if the CDN script is blocked/offline the app must still work.
+    function refreshIcons() {
+      try { if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons(); } catch (e) { console.warn('icons unavailable', e); }
+    }
+    // Run one render step; a failure in one panel must never stop the others.
+    function safeRender(name, fn) {
+      try { fn(); } catch (e) { console.error('Render step failed: ' + name, e); }
+    }
+
+    const state = {
+      regexStr: '',
+      testStr: '',
+      analysisStarted: false,
+      ast: null,
+      nfa: null,
+      dfa: null,
+      nfaTrace: [],
+      dfaTrace: [],
+      currentStep: 0,
+      activeAutomatonView: 'NFA', // always equal to activeTraceTab (see setMode)
+      activeTraceTab: 'NFA',
+      isPlaying: false,
+      playbackTimer: null,
+      blameStats: {},
+      selectedAstNodeId: null,
+      activeAstNodeId: null,
+      lastPcre: null,
+      growth: null,
+      growthEdited: false,
+      policyResults: { pcre: { match: '', steps: 0 }, posix: { match: '', steps: 0 }, diverges: false }
+    };
+
+    const GROWTH_STEP_CAP = 20000;
+    let liveTimer = null;
+    let growthTimer = null;
+
+    // --- PRESETS DATABASE ---
+    const PRESETS = {
+      redos: { regex: '(a+)+b', str: 'aaaaac' },
+      divergence: { regex: 'a|ab', str: 'ab' },
+      walkthrough: { regex: 'a(b|c)*d', str: 'abcbd' },
+      failure: { regex: 'a(b|c)*d', str: 'abce' },
+      complex: { regex: '[a-z]+(\\.[a-z]+)?', str: 'test.dev' },
+      overlap: { regex: '[a-z]*b', str: 'aab' },
+      poly: { regex: 'a*a*a*b', str: 'aaaaaaaac' }
+    };
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function displayChar(ch) {
+      if (ch === ' ') return '␣';
+      if (ch === '\n') return '\\n';
+      if (ch === '\t') return '\\t';
+      if (ch === '\r') return '\\r';
+      return ch;
+    }
+
+    function activeTrace() {
+      return state.activeTraceTab === 'NFA' ? state.nfaTrace : state.dfaTrace;
+    }
+
+    /**
+     * --- RUN COMPREHENSIVE PIPELINE ---
+     * Returns { ok: true } or { ok: false, error: '<html>' }.
+     */
+    function executePipeline(opts = {}) {
+      pausePlayback();
+      const regexStr = $('regexInput').value.trim();
+      const testStr = $('stringInput').value;
+      $('stringLengthPill').innerText = `Length: ${testStr.length} chars`;
+
+      if (!regexStr) {
+        setVerdictBadge('PATTERN REQUIRED', 'bad');
+        return { ok: false, error: escapeHtml('Enter a regular expression pattern before running the analysis.') };
+      }
+
+      let ast, nfa, dfa;
+      try {
+        ast = parseRegex(regexStr);
+        nfa = buildNfaFromAst(ast);
+        dfa = buildDfaFromNfa(nfa);
+      } catch (err) {
+        console.error('Pipeline error:', err);
+        setVerdictBadge('SYNTAX ERROR', 'bad');
+        let html;
+        if (err instanceof RegexSyntaxError) {
+          html = `<strong>Syntax error at position ${err.pos}:</strong> ${escapeHtml(err.message)}<pre class="mt-1 font-mono whitespace-pre">/${escapeHtml(regexStr)}/\n${' '.repeat(err.pos + 1)}^</pre>`;
+        } else {
+          html = `<strong>Could not analyze the pattern:</strong> ${escapeHtml(err.message)}`;
+        }
+        return { ok: false, error: html };
+      }
+
+      state.regexStr = regexStr;
+      state.testStr = testStr;
+      state.ast = ast;
+      state.nfa = nfa;
+      state.dfa = dfa;
+
+      // Full-match semantics: same question the DFA answers, so the verdicts are comparable.
+      const pcreRun = runNfaBacktracking(nfa, testStr, 'FIRST', true);
+      state.nfaTrace = pcreRun.trace;
+      state.blameStats = pcreRun.blameMap;
+      state.lastPcre = pcreRun;
+
+      // Prefix semantics for the policy comparison (which substring from index 0 does each policy pick?).
+      const pcrePrefix = runNfaBacktracking(nfa, testStr, 'FIRST', false, { record: false });
+      const posixPrefix = runNfaBacktracking(nfa, testStr, 'LONGEST', false, { record: false });
+      state.policyResults = {
+        pcre: { match: pcrePrefix.matchedText, steps: pcrePrefix.totalSteps, success: pcrePrefix.success, aborted: pcrePrefix.aborted },
+        posix: { match: posixPrefix.matchedText, steps: posixPrefix.totalSteps, success: posixPrefix.success, aborted: posixPrefix.aborted },
+        diverges: (pcrePrefix.matchedText !== posixPrefix.matchedText) || (pcrePrefix.success !== posixPrefix.success)
+      };
+
+      const dfaRun = runDfaDeterministic(dfa, testStr);
+      state.dfaTrace = dfaRun.trace;
+
+      // Growth family follows the test string unless the user edited it by hand.
+      if (opts.fresh) state.growthEdited = false;
+      if (!state.growthEdited) {
+        const fam = buildGrowthFamily(testStr);
+        $('growthPrefix').value = fam.prefix;
+        $('growthPump').value = fam.pump;
+        $('growthSuffix').value = fam.suffix;
+      }
+      refreshGrowth();
+
+      state.currentStep = 0;
+      state.activeTraceTab = state.activeTraceTab || 'NFA';
+      safeRender('telemetry', () => updateTelemetry(pcreRun, dfaRun));
+      safeRender('heatmap', renderBlameHeatmap);
+      safeRender('astTree', renderAstTree);
+      safeRender('policy', renderPolicyComparator);
+      safeRender('modeButtons', updateModeButtons);
+      safeRender('scrubber', initScrubber);
+      safeRender('automaton', renderAutomatonGraph);
+      safeRender('traceTable', renderTraceTable);
+      safeRender('explanation', () => generateDiagnosticExplanation(pcreRun, dfaRun));
+      return { ok: true };
+    }
+
+    /**
+     * --- TELEMETRY ---
+     */
+    function setVerdictBadge(text, kind) {
+      const v = $('verdictBadge');
+      v.innerText = text;
+      const base = 'font-bold uppercase tracking-wider px-2 py-0.5 rounded text-[11px] border ';
+      if (kind === 'good') v.className = base + 'bg-emerald-950 text-emerald-300 border-emerald-700';
+      else if (kind === 'warn') v.className = base + 'bg-amber-950 text-amber-300 border-amber-700';
+      else v.className = base + 'bg-red-950 text-red-400 border-red-800';
+    }
+
+    function setChip(id, status, text, title) {
+      const el = $(id);
+      el.innerText = text;
+      el.title = title || '';
+      el.className = 'font-mono font-bold ' + (status === 'ok' ? 'text-emerald-700' : status === 'bad' ? 'text-red-700' : 'text-slate-500');
+    }
+
+    function updateTelemetry(pcreRun, dfaRun) {
+      if (pcreRun.aborted) setVerdictBadge('ABORTED (STEP LIMIT)', 'warn');
+      else if (pcreRun.success) setVerdictBadge('ACCEPTED', 'good');
+      else setVerdictBadge('REJECTED', 'bad');
+
+      $('metricSteps').innerText = pcreRun.totalSteps;
+      $('metricBacktracks').innerText = pcreRun.backtrackCount;
+      $('metricNfaStates').innerText = Object.keys(state.nfa.states).length;
+      $('metricDfaStates').innerText = state.dfa.states.length;
+      $('nfaStepCounterBadge').innerText = `${pcreRun.totalSteps} steps`;
+      $('dfaStepCounterBadge').innerText = `${dfaRun.totalSteps} steps`;
+
+      // Cross-check 1: DFA vs backtracking NFA
+      if (pcreRun.aborted) {
+        setChip('chipDfa', 'na', 'n/a', 'The backtracking run was aborted, so there is no NFA verdict to compare.');
+      } else if (pcreRun.success === dfaRun.success) {
+        setChip('chipDfa', 'ok', 'agree', 'Both matchers give the same verdict.');
+      } else {
+        setChip('chipDfa', 'bad', 'DISAGREE', 'The DFA and the NFA matcher disagree: this indicates a bug in the engine.');
+      }
+
+      // Cross-check 2: browser-native RegExp (full match)
+      try {
+        const native = new RegExp('^(?:' + state.regexStr + ')$').test(state.testStr);
+        const mine = dfaRun.success;
+        if (native === mine) setChip('chipNative', 'ok', 'agree', 'Same full-match verdict as the browser RegExp.');
+        else setChip('chipNative', 'bad', 'differs', 'The browser RegExp says ' + (native ? 'match' : 'no match') + '. Characters such as ^ $ { } are special to native RegExp but literal here.');
+      } catch (e) {
+        setChip('chipNative', 'na', 'n/a', 'The browser RegExp rejects this pattern.');
+      }
+      refreshIcons();
+    }
+
+    function updateRedosBadge() {
+      const container = $('redosBadgeContainer');
+      const run = state.lastPcre;
+      const g = state.growth;
+      if (!run || !g) return;
+      const cls = g.cls;
+      if (run.aborted || cls.kind === 'exponential') {
+        container.className = 'flex items-center gap-2 px-3 py-1 rounded-lg bg-red-950/70 border border-red-700 text-red-300';
+        container.innerHTML = `
+          <i data-lucide="shield-alert" class="w-4 h-4 text-red-400 animate-pulse"></i>
+          <span class="font-semibold text-xs tracking-wide uppercase">${cls.kind === 'exponential' ? 'Exponential ReDoS measured' : 'Step limit hit'}</span>
+          <span class="text-[10px] bg-red-900/60 text-red-200 px-1.5 py-0.5 rounded font-mono">${escapeHtml(cls.kind === 'exponential' ? cls.detail : run.backtrackCount + ' retries')}</span>`;
+      } else if (cls.kind === 'polynomial') {
+        container.className = 'flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-950/70 border border-amber-700 text-amber-300';
+        container.innerHTML = `
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+          <span class="font-semibold text-xs tracking-wide uppercase">Polynomial backtracking</span>
+          <span class="text-[10px] bg-amber-900/60 text-amber-200 px-1.5 py-0.5 rounded font-mono">${escapeHtml(cls.detail)}</span>`;
+      } else {
+        container.className = 'flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-950/70 border border-emerald-700 text-emerald-300';
+        container.innerHTML = `
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+          <span class="font-semibold text-xs tracking-wide uppercase">No blow-up on this input family</span>
+          <span class="text-[10px] bg-emerald-900/60 text-emerald-200 px-1.5 py-0.5 rounded font-mono">${escapeHtml(cls.kind === 'unknown' ? 'n/a' : cls.kind)}</span>`;
+      }
+      refreshIcons();
+    }
+
+    /**
+     * --- HEATMAP (Extension 1) ---
+     */
+    function nodeBlame(node) {
+      const total = Object.values(state.blameStats).reduce((a, b) => a + b, 0);
+      const cost = state.blameStats[node.id] || 0;
+      return { total, cost, pct: total > 0 ? Math.round((cost / total) * 100) : 0 };
+    }
+
+    function renderBlameHeatmap() {
+      const container = $('heatmapContainer');
+      container.innerHTML = '';
+      const { total } = nodeBlame({ id: -1 });
+
+      // Every meaningful AST node (including those nested under quantifiers), in source order of the tree.
+      const tokens = [];
+      (function walk(n) {
+        if (n.type !== 'CONCAT' && !(n.type === 'EPSILON' && !(state.blameStats[n.id] > 0))) tokens.push(n);
+        n.children.forEach(walk);
+      })(state.ast);
+      if (tokens.length === 0) tokens.push(state.ast);
+
+      tokens.forEach(node => {
+        const { cost, pct } = nodeBlame(node);
+        let bgClass = 'bg-slate-800 text-slate-300 border-slate-700';
+        if (pct > 70) bgClass = 'bg-red-950/90 text-red-200 border-red-600 ring-2 ring-red-500/50';
+        else if (pct > 25) bgClass = 'bg-amber-950/80 text-amber-200 border-amber-600';
+        else if (pct > 0) bgClass = 'bg-emerald-950/70 text-emerald-300 border-emerald-600';
+
+        const el = document.createElement('div');
+        el.className = `cursor-pointer px-2.5 py-1 rounded-lg border text-sm font-mono flex items-center gap-1.5 transition transform hover:scale-105 ${bgClass}`;
+        el.innerHTML = `
+          <span>${escapeHtml(node.rawSpan || node.val || node.type)}</span>
+          <span class="text-[10px] px-1 rounded font-bold ${pct > 70 ? 'bg-red-800 text-white' : 'bg-slate-900/60 text-slate-300'}">${pct}% blame</span>`;
+        el.title = `${node.type}: ${cost} attributed retries`;
+        el.onclick = () => selectNode(node);
+        container.appendChild(el);
+      });
+
+      $('heatmapDetailText').innerText = total > 0
+        ? `Backtrack hotspot detected: ${total} total retries logged across the pattern AST.`
+        : 'Clean deterministic execution: 0 backtrack retries encountered.';
+      $('astDetailText').innerText = 'Click a node to inspect it.';
+      state.selectedAstNodeId = null;
+    }
+
+    function selectNode(node) {
+      state.selectedAstNodeId = node.id;
+      const { cost, pct } = nodeBlame(node);
+      const verdict = pct > 70
+        ? '<span class="text-red-700 font-semibold block mt-1">Diagnosis: most backtracking is attributed here. If this sits under a nested quantifier such as (a+)+, rewrite it so the inner and outer loops cannot split the same text in several ways.</span>'
+        : '<span class="text-emerald-700 block mt-1">Diagnosis: small share of the backtracking.</span>';
+      const html = `
+        <strong>Sub-expression: <code class="text-cyan-300">${escapeHtml(node.rawSpan || node.type)}</code></strong> &bull;
+        AST type: <code class="text-amber-400">${escapeHtml(node.type)}</code> &bull;
+        source span [${node.start}, ${node.end}) &bull;
+        attributed retries: <span class="font-bold text-red-400">${cost}</span> (${pct}% of all backtracking).
+        ${verdict}`;
+      $('heatmapDetailText').innerHTML = html;
+      $('astDetailText').innerHTML = html;
+      refreshAstStyles();
+    }
+
+    /**
+     * --- AST PARSE TREE (Extension 2) ---
+     */
+    const AST_TYPE_NAMES = { LITERAL: 'literal', CHAR_CLASS: 'class', DOT: 'any char', UNION: 'alternation', CONCAT: 'concat', STAR: 'star', PLUS: 'plus', OPTIONAL: 'optional', EPSILON: 'empty' };
+
+    function astLabel(n) {
+      switch (n.type) {
+        case 'LITERAL': return displayChar(n.val);
+        case 'CHAR_CLASS': return n.val;
+        case 'DOT': return '.';
+        case 'UNION': return '|';
+        case 'CONCAT': return '·';
+        case 'STAR': return '*';
+        case 'PLUS': return '+';
+        case 'OPTIONAL': return '?';
+        default: return 'ε';
+      }
+    }
+
+    function astBracket(n) {
+      const name = n.type === 'LITERAL' ? displayChar(n.val) : n.type === 'CHAR_CLASS' ? n.val : n.type === 'DOT' ? 'DOT' : n.type;
+      return n.children.length ? `${n.type}(${n.children.map(astBracket).join(', ')})` : name;
+    }
+
+    function renderAstTree() {
+      const svg = $('astSvg');
+      svg.innerHTML = '';
+      $('astBracket').textContent = astBracket(state.ast);
+      const CELL_W = 100, CELL_H = 82, PAD = 24;
+      let leaves = 0, maxDepth = 0;
+      (function layout(n, d) {
+        n._depth = d;
+        maxDepth = Math.max(maxDepth, d);
+        if (n.children.length === 0) {
+          n._x = leaves++;
+        } else {
+          n.children.forEach(c => layout(c, d + 1));
+          n._x = (n.children[0]._x + n.children[n.children.length - 1]._x) / 2;
+        }
+      })(state.ast, 0);
+
+      const W = Math.max(leaves, 1) * CELL_W + PAD * 2;
+      const H = (maxDepth + 1) * CELL_H + PAD;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('width', W);
+      svg.setAttribute('height', H);
+      const px = n => PAD + (n._x + 0.5) * CELL_W;
+      const py = n => PAD / 2 + n._depth * CELL_H + 28;
+
+      let edges = '';
+      let nodes = '';
+      (function draw(n) {
+        n.children.forEach(c => {
+          edges += `<line x1="${px(n)}" y1="${py(n) + 22}" x2="${px(c)}" y2="${py(c) - 22}" stroke="#c8c5c1" stroke-width="1.5"/>`;
+          draw(c);
+        });
+        const label = astLabel(n);
+        const short = label.length > 10 ? label.slice(0, 9) + '…' : label;
+        const w = Math.min(92, Math.max(58, short.length * 9 + 24));
+        const { pct, cost } = nodeBlame(n);
+        const fill = pct > 70 ? '#fecaca' : pct > 25 ? '#fde68a' : pct > 0 ? '#bbf7d0' : '#fff7df';
+        const typeText = AST_TYPE_NAMES[n.type] + (n.grouped ? ' ( )' : '');
+        nodes += `
+          <g class="ast-node" data-id="${n.id}" style="cursor:pointer">
+            <title>${escapeHtml(n.type)} ${escapeHtml(n.rawSpan)} | ${cost} retries (${pct}%)</title>
+            <rect class="ast-rect" data-id="${n.id}" data-fill="${fill}" x="${px(n) - w / 2}" y="${py(n) - 22}" width="${w}" height="44" rx="10" fill="${fill}" stroke="#bd8615" stroke-width="1.5"/>
+            <text x="${px(n)}" y="${py(n) - 3}" text-anchor="middle" font-family="monospace" font-size="14" font-weight="700" fill="#202020">${escapeHtml(short)}</text>
+            <text x="${px(n)}" y="${py(n) + 13}" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#66615c">${escapeHtml(typeText)}</text>
+          </g>`;
+      })(state.ast);
+      svg.innerHTML = edges + nodes;
+
+      const byId = {};
+      (function index(n) { byId[n.id] = n; n.children.forEach(index); })(state.ast);
+      svg.querySelectorAll('.ast-node').forEach(g => {
+        g.addEventListener('click', () => selectNode(byId[g.getAttribute('data-id')]));
+      });
+      refreshAstStyles();
+    }
+
+    function refreshAstStyles() {
+      const svg = $('astSvg');
+      if (!svg) return;
+      svg.querySelectorAll('.ast-rect').forEach(r => {
+        const id = parseInt(r.getAttribute('data-id'), 10);
+        if (id === state.activeAstNodeId) {
+          r.setAttribute('stroke', '#0284c7');
+          r.setAttribute('stroke-width', '4');
+        } else if (id === state.selectedAstNodeId) {
+          r.setAttribute('stroke', '#7c2d12');
+          r.setAttribute('stroke-width', '3');
+        } else {
+          r.setAttribute('stroke', '#bd8615');
+          r.setAttribute('stroke-width', '1.5');
+        }
+      });
+    }
+
+    /**
+     * --- POLICY COMPARATOR (Extension 5) ---
+     */
+    function renderPolicyComparator() {
+      const { pcre, posix, diverges } = state.policyResults;
+      const fmt = r => (r.aborted ? 'ABORTED' : r.success ? `"${r.match}"` : 'NO_MATCH');
+      $('policyPcreResult').innerText = fmt(pcre);
+      $('policyPosixResult').innerText = fmt(posix);
+      $('policyPcreSteps').innerText = `Steps consumed: ${pcre.steps}`;
+      $('policyPosixSteps').innerText = `Steps consumed: ${posix.steps}`;
+
+      const banner = $('policyExplanationBanner');
+      const text = $('policyExplanationText');
+      if (pcre.aborted || posix.aborted) {
+        banner.className = 'p-3 rounded-xl bg-amber-950/40 border border-amber-700 text-xs text-amber-200 flex items-start gap-2';
+        text.innerHTML = `<strong>Comparison incomplete:</strong> ${pcre.aborted ? 'the leftmost-first run' : 'the leftmost-longest run'} hit the step limit, so its result cannot be trusted.`;
+      } else if (diverges) {
+        banner.className = 'p-3 rounded-xl bg-purple-950/60 border border-purple-600 text-xs text-purple-200 flex items-start gap-2';
+        text.innerHTML = `
+          <strong>Policy Divergence Detected:</strong> Leftmost-First (PCRE) matched <code class="text-white bg-purple-900 px-1 rounded">${escapeHtml(pcre.success ? pcre.match : 'NO_MATCH')}</code> in ${pcre.steps} steps because it committed to the first working branch.
+          POSIX matched <code class="text-white bg-purple-900 px-1 rounded">${escapeHtml(posix.success ? posix.match : 'NO_MATCH')}</code> in ${posix.steps} steps because it must consider every branch to guarantee the longest match.`;
+      } else {
+        banner.className = 'p-3 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-slate-300 flex items-start gap-2';
+        text.innerHTML = `<strong>Unanimous Agreement:</strong> Both policies converged on the same result <code class="text-emerald-300 font-mono">${escapeHtml(pcre.success ? (pcre.match || '(empty)') : 'NO_MATCH')}</code> without ambiguity.`;
+      }
+      refreshIcons();
+    }
+
+    /**
+     * --- GROWTH ANALYZER (Extension 4) ---
+     */
+    function onGrowthInput() {
+      state.growthEdited = true;
+      clearTimeout(growthTimer);
+      growthTimer = setTimeout(refreshGrowth, 150);
+    }
+
+    function autoGrowthFamily() {
+      state.growthEdited = false;
+      const fam = buildGrowthFamily(state.testStr);
+      $('growthPrefix').value = fam.prefix;
+      $('growthPump').value = fam.pump;
+      $('growthSuffix').value = fam.suffix;
+      refreshGrowth();
+    }
+
+    function refreshGrowth() {
+      if (!state.nfa) return;
+      const family = { prefix: $('growthPrefix').value, pump: $('growthPump').value, suffix: $('growthSuffix').value };
+      if (family.pump.length > 8) family.pump = family.pump.slice(0, 8);
+      let maxN = parseInt($('growthMaxN').value, 10);
+      if (!(maxN >= 4)) maxN = 16;
+      maxN = Math.min(24, maxN);
+      state.growth = computeGrowth(state.nfa, state.dfa, family, maxN, GROWTH_STEP_CAP);
+      renderGrowthChart();
+      updateRedosBadge();
+    }
+
+    function fmtNum(v) {
+      if (v >= 1e6) return (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + 'M';
+      if (v >= 1e3) return (v / 1e3).toFixed(v >= 1e4 ? 0 : 1) + 'k';
+      return String(Math.round(v));
+    }
+
+    function renderGrowthChart() {
+      const g = state.growth;
+      const host = $('growthChart');
+      const summary = $('growthSummary');
+      if (!g) return;
+      if (g.points.length === 0) {
+        host.innerHTML = '<div class="p-4 text-xs text-slate-500">Enter a non-empty pump string to run the analysis.</div>';
+        summary.innerText = '';
+        return;
+      }
+      const log = $('growthLog').checked;
+      const W = 760, H = 300, m = { l: 58, r: 20, t: 34, b: 42 };
+      const pts = g.points;
+      const maxN = pts[pts.length - 1].n;
+      const yMax = Math.max(2, ...pts.map(p => Math.max(p.steps, p.dfaSteps)));
+      const frac = v => (log ? Math.log10(Math.max(v, 1)) / Math.log10(yMax) : v / yMax);
+      const X = n => m.l + ((n - 1) / Math.max(1, maxN - 1)) * (W - m.l - m.r);
+      const Y = v => m.t + (1 - frac(v)) * (H - m.t - m.b);
+
+      let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;margin:0 auto;max-width:100%;height:auto" role="img" aria-label="Steps versus n">`;
+      for (let i = 0; i <= 4; i++) {
+        const val = log ? Math.pow(10, (Math.log10(yMax) * i) / 4) : (yMax * i) / 4;
+        const y = Y(val);
+        svg += `<line x1="${m.l}" y1="${y}" x2="${W - m.r}" y2="${y}" stroke="#e3e0dc" stroke-width="1"/>`;
+        svg += `<text x="${m.l - 8}" y="${y + 4}" text-anchor="end" font-size="11" font-family="monospace" fill="#66615c">${fmtNum(val)}</text>`;
+      }
+      const tickEvery = Math.max(1, Math.ceil(maxN / 8));
+      for (let n = 1; n <= maxN; n++) {
+        if (n === 1 || n % tickEvery === 0 || n === maxN) {
+          svg += `<text x="${X(n)}" y="${H - m.b + 16}" text-anchor="middle" font-size="11" font-family="monospace" fill="#66615c">${n}</text>`;
+        }
+      }
+      svg += `<line x1="${m.l}" y1="${H - m.b}" x2="${W - m.r}" y2="${H - m.b}" stroke="#99948f"/><line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H - m.b}" stroke="#99948f"/>`;
+      svg += `<text x="${(m.l + W - m.r) / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="#66615c">n (number of pump repetitions)</text>`;
+      svg += `<text x="14" y="${(m.t + H - m.b) / 2}" text-anchor="middle" font-size="11" fill="#66615c" transform="rotate(-90 14 ${(m.t + H - m.b) / 2})">steps${log ? ' (log)' : ''}</text>`;
+
+      const series = [
+        { key: 'steps', color: '#b45309', name: 'Backtracking NFA' },
+        { key: 'dfaSteps', color: '#7c3aed', name: 'Deterministic DFA' }
+      ];
+      series.forEach(s => {
+        svg += `<polyline fill="none" stroke="${s.color}" stroke-width="2.2" points="${pts.map(p => `${X(p.n)},${Y(p[s.key])}`).join(' ')}"/>`;
+        pts.forEach(p => {
+          if (s.key === 'steps' && p.aborted) {
+            const x = X(p.n), y = Y(p.steps);
+            svg += `<g><title>n=${p.n}: step budget (${fmtNum(g.cap)}) exhausted</title><path d="M${x - 5},${y - 5} L${x + 5},${y + 5} M${x + 5},${y - 5} L${x - 5},${y + 5}" stroke="#991b1b" stroke-width="2.5"/></g>`;
+          } else {
+            svg += `<circle cx="${X(p.n)}" cy="${Y(p[s.key])}" r="3.2" fill="${s.color}"><title>n=${p.n} (input length ${p.len}): ${p[s.key]} steps</title></circle>`;
+          }
+        });
+      });
+      svg += `<rect x="${m.l + 8}" y="6" width="10" height="10" fill="#b45309"/><text x="${m.l + 24}" y="15" font-size="11" fill="#202020">Backtracking NFA</text>`;
+      svg += `<rect x="${m.l + 150}" y="6" width="10" height="10" fill="#7c3aed"/><text x="${m.l + 166}" y="15" font-size="11" fill="#202020">Deterministic DFA</text>`;
+      svg += `<path d="M${m.l + 300},7 l8,8 m0,-8 l-8,8" stroke="#991b1b" stroke-width="2"/><text x="${m.l + 314}" y="15" font-size="11" fill="#202020">step budget exhausted</text>`;
+      svg += '</svg>';
+      host.innerHTML = svg;
+
+      const f = g.family;
+      const cls = g.cls;
+      const lastDfa = pts[pts.length - 1].dfaSteps;
+      const labelMap = { exponential: 'EXPONENTIAL', polynomial: 'POLYNOMIAL', linear: 'LINEAR', constant: 'CONSTANT', unknown: 'UNKNOWN' };
+      summary.innerHTML = `
+        Input family: <code>"${escapeHtml(f.prefix)}"</code> + <code>"${escapeHtml(f.pump)}"</code> &times; n + <code>"${escapeHtml(f.suffix)}"</code>, n = 1&hellip;${maxN}, step budget ${fmtNum(g.cap)} per run.<br>
+        <strong>Backtracking growth: ${labelMap[cls.kind]}</strong> (${escapeHtml(cls.detail)}).
+        The DFA needed ${lastDfa} steps at n=${maxN}, always input length + 2, which is linear.
+        ${cls.kind === 'exponential' ? ' This is the signature of catastrophic backtracking (ReDoS).' : ''}
+        ${cls.kind === 'polynomial' ? ' Several quantifiers compete for the same characters, so the engine tries many split points.' : ''}
+        <span class="text-slate-500">This classification is empirical: it describes this input family only.</span>`;
+    }
+
+    /**
+     * --- TIME-TRAVEL SCRUBBER (Extension 3) ---
+     */
+    function updateScrubberLabels() {
+      const t = activeTrace();
+      const slider = $('timelineSlider');
+      slider.min = 0;
+      slider.max = Math.max(0, t.length - 1);
+      slider.value = state.currentStep;
+      $('currentStepDisplay').innerText = `Step ${t.length ? state.currentStep + 1 : 0}/${t.length}`;
+      $('totalStepsDisplay').innerText = `${t.length} steps`;
+    }
+
+    function initScrubber() {
+      const t = activeTrace();
+      state.currentStep = Math.max(0, Math.min(state.currentStep, t.length - 1));
+      updateScrubberLabels();
+      renderStepTelemetry();
+    }
+
+    function seekToStep(stepIdx) {
+      const t = activeTrace();
+      state.currentStep = Math.max(0, Math.min(parseInt(stepIdx, 10) || 0, t.length - 1));
+      updateScrubberLabels();
+      renderStepTelemetry();
+      highlightActiveAutomatonNode();
+      highlightTraceTableRow(true);
+    }
+
+    function stepForward() {
+      if (state.currentStep < activeTrace().length - 1) seekToStep(state.currentStep + 1);
+      else pausePlayback();
+    }
+
+    function stepBack() {
+      if (state.currentStep > 0) seekToStep(state.currentStep - 1);
+    }
+
+    function resetPlayback() {
+      pausePlayback();
+      seekToStep(0);
+    }
+
+    function jumpToFirstBacktrack() {
+      pausePlayback();
+      const idx = state.nfaTrace.findIndex(r => r.isBacktrack);
+      if (idx !== -1) {
+        setMode('NFA');
+        seekToStep(idx);
+      } else {
+        $('stepDiagnosisBrief').innerText = 'No backtracking events were recorded for this execution.';
+      }
+    }
+
+    function jumpToVerdict() {
+      pausePlayback();
+      seekToStep(activeTrace().length - 1);
+    }
+
+    function togglePlay() {
+      if (state.isPlaying) pausePlayback();
+      else startPlayback();
+    }
+
+    function startPlayback() {
+      if (state.currentStep >= activeTrace().length - 1) seekToStep(0);
+      state.isPlaying = true;
+      $('playText').innerText = 'Pause';
+      $('playIcon').setAttribute('data-lucide', 'pause');
+      refreshIcons();
+      const speed = parseInt($('playbackSpeedSelect').value, 10);
+      clearInterval(state.playbackTimer);
+      state.playbackTimer = setInterval(() => {
+        // Always read the *current* trace so a mode switch mid-play cannot leave a stale reference.
+        if (state.currentStep < activeTrace().length - 1) seekToStep(state.currentStep + 1);
+        else pausePlayback();
+      }, speed);
+    }
+
+    function pausePlayback() {
+      state.isPlaying = false;
+      clearInterval(state.playbackTimer);
+      const pt = $('playText');
+      if (pt) {
+        pt.innerText = 'Play';
+        $('playIcon').setAttribute('data-lucide', 'play');
+        refreshIcons();
+      }
+    }
+
+    function renderStepTelemetry() {
+      const t = activeTrace();
+      const rec = t[state.currentStep];
+      if (!rec) return;
+
+      const str = state.testStr;
+      let rendered = '';
+      for (let i = 0; i < str.length; i++) {
+        const c = escapeHtml(str[i]);
+        rendered += i === rec.strIdx
+          ? `<span class="bg-cyan-500/30 text-cyan-300 font-bold px-1 rounded ring-1 ring-cyan-400">${c}</span>`
+          : `<span>${c}</span>`;
+      }
+      if (rec.strIdx >= str.length) {
+        rendered += ` <span class="bg-amber-500/30 text-amber-300 font-bold px-1 rounded text-xs ring-1 ring-amber-400">EOF</span>`;
+      }
+      $('pointerPreview').innerHTML = rendered || '&epsilon;';
+
+      const actionEl = $('currentStepAction');
+      actionEl.innerText = `${rec.action} [${rec.result}]`;
+      if (rec.result === 'ACCEPT') actionEl.className = 'font-mono font-bold text-emerald-400';
+      else if (rec.result === 'BACKTRACK' || rec.result === 'REJECT') actionEl.className = 'font-mono font-bold text-red-400';
+      else actionEl.className = 'font-mono font-bold text-cyan-400';
+
+      $('choicePointStackDisplay').innerText = `Depth: ${rec.choiceDepth || 0} frames active`;
+      $('stepDiagnosisBrief').innerText = rec.note;
+      $('stepDiagnosisBrief').title = rec.note;
+    }
+
+    /**
+     * --- MODE SWITCH: graph view and trace tab are one setting, so they cannot disagree ---
+     */
+    function setMode(mode) {
+      if (mode !== 'NFA' && mode !== 'DFA') return;
+      const changed = state.activeTraceTab !== mode;
+      pausePlayback();
+      state.activeTraceTab = mode;
+      state.activeAutomatonView = mode;
+      if (changed) state.currentStep = 0;
+      updateModeButtons();
+      initScrubber();
+      renderTraceTable();
+      renderAutomatonGraph();
+    }
+
+    function updateModeButtons() {
+      const isNfa = state.activeTraceTab === 'NFA';
+      $('viewNfaBtn').classList.toggle('mode-active', isNfa);
+      $('viewDfaBtn').classList.toggle('mode-active', !isNfa);
+      $('tabNfaTraceBtn').classList.toggle('tab-active', isNfa);
+      $('tabDfaTraceBtn').classList.toggle('tab-active', !isNfa);
+      $('automatonStatsLabel').innerText = isNfa
+        ? 'NFA: Thompson composition with ε-transitions'
+        : 'DFA: subset construction over disjoint character classes';
+    }
+
+    /**
+     * --- AUTOMATON GRAPH VISUALIZER (SVG) ---
+     * States are placed in columns by BFS distance from the start state.
+     */
+    function renderAutomatonGraph() {
+      const svg = $('automatonSvg');
+      svg.innerHTML = '';
+      if (!state.nfa) return;
+
+      const isNfa = state.activeAutomatonView === 'NFA';
+      const nodes = isNfa ? state.nfa.stateList : state.dfa.states;
+      if (!nodes || nodes.length === 0) return;
+      const startId = isNfa ? state.nfa.startId : state.dfa.startId;
+      const byId = {};
+      nodes.forEach(n => { byId[n.id] = n; });
+
+      const succ = n => {
+        const out = [];
+        if (isNfa) n.epsilonTransitions.forEach(t => out.push(t));
+        Object.keys(n.transitions).forEach(k => {
+          const v = n.transitions[k];
+          (Array.isArray(v) ? v : [v]).forEach(t => out.push(t));
+        });
+        return out;
+      };
+
+      const layer = {};
+      layer[startId] = 0;
+      const queue = [startId];
+      while (queue.length) {
+        const id = queue.shift();
+        succ(byId[id]).forEach(t => {
+          if (layer[t] === undefined) { layer[t] = layer[id] + 1; queue.push(t); }
+        });
+      }
+      let maxLayer = 0;
+      nodes.forEach(n => { if (layer[n.id] === undefined) layer[n.id] = 0; maxLayer = Math.max(maxLayer, layer[n.id]); });
+
+      const columns = {};
+      nodes.forEach(n => { (columns[layer[n.id]] = columns[layer[n.id]] || []).push(n); });
+      const maxCol = Math.max(...Object.values(columns).map(c => c.length));
+
+      const GAP_X = 92, GAP_Y = 78;
+      const width = Math.max(($('graphScroll').clientWidth || 650), 80 + (maxLayer + 1) * GAP_X + 40);
+      const height = Math.max(($('graphScroll').clientHeight || 360), maxCol * GAP_Y + 70);
+      svg.setAttribute('width', width);
+      svg.setAttribute('height', height);
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      const coords = {};
+      Object.keys(columns).forEach(l => {
+        const col = columns[l];
+        col.forEach((n, i) => {
+          coords[n.id] = { x: 64 + Number(l) * GAP_X, y: height / 2 + (i - (col.length - 1) / 2) * GAP_Y };
+        });
+      });
+
+      let defs = `<defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b"/></marker>
+        <marker id="arrow-epsilon" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706"/></marker>
+      </defs>`;
+
+      // Merge parallel edges so labels do not overprint
+      const edgeMap = {};
+      const addEdge = (s, t, label, eps) => {
+        const k = `${s}>${t}|${eps ? 'e' : 's'}`;
+        if (!edgeMap[k]) edgeMap[k] = { s, t, eps, labels: [] };
+        edgeMap[k].labels.push(label);
+      };
+      nodes.forEach(n => {
+        if (isNfa) n.epsilonTransitions.forEach(t => addEdge(n.id, t, 'ε', true));
+        Object.keys(n.transitions).forEach(k => {
+          const v = n.transitions[k];
+          const label = isNfa ? k : (state.dfa.classes[k] ? state.dfa.classes[k].display : k);
+          (Array.isArray(v) ? v : [v]).forEach(t => addEdge(n.id, t, label, false));
+        });
+      });
+
+      let edgesSvg = '';
+      Object.values(edgeMap).forEach(e => {
+        const a = coords[e.s], b = coords[e.t];
+        const color = e.eps ? '#d97706' : '#64748b';
+        const marker = e.eps ? 'url(#arrow-epsilon)' : 'url(#arrow)';
+        const label = escapeHtml(e.labels.join(', '));
+        let d, tx, ty;
+        if (e.s === e.t) {
+          d = `M ${a.x - 10} ${a.y - 16} C ${a.x - 22} ${a.y - 52}, ${a.x + 22} ${a.y - 52}, ${a.x + 10} ${a.y - 16}`;
+          tx = a.x; ty = a.y - 50;
+        } else {
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const bend = 26;
+          const cx = (a.x + b.x) / 2 + (-dy / len) * bend;
+          const cy = (a.y + b.y) / 2 + (dx / len) * bend;
+          d = `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+          tx = 0.25 * a.x + 0.5 * cx + 0.25 * b.x;
+          ty = 0.25 * a.y + 0.5 * cy + 0.25 * b.y - 4;
+        }
+        edgesSvg += `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" ${e.eps ? 'stroke-dasharray="3 2"' : ''} marker-end="${marker}"/>`;
+        edgesSvg += `<text x="${tx}" y="${ty}" text-anchor="middle" font-size="10" font-family="monospace" fill="${color}" stroke="#ffffff" stroke-width="3" paint-order="stroke">${label}</text>`;
+      });
+
+      let nodesSvg = '';
+      nodes.forEach(n => {
+        const p = coords[n.id];
+        const isStart = n.id === startId;
+        nodesSvg += `<g id="graph-node-${n.id}" class="graph-node" data-id="${n.id}" style="cursor:pointer">`;
+        if (isStart) {
+          nodesSvg += `<line x1="${p.x - 46}" y1="${p.y}" x2="${p.x - 20}" y2="${p.y}" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>`;
+        }
+        if (n.isAccept) {
+          nodesSvg += `<circle cx="${p.x}" cy="${p.y}" r="24" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="3 2"/>`;
+        }
+        nodesSvg += `<circle id="circle-node-${n.id}" cx="${p.x}" cy="${p.y}" r="18" fill="${isStart ? '#1e293b' : '#0f172a'}" stroke="${n.isAccept ? '#10b981' : '#334155'}" stroke-width="2"/>`;
+        nodesSvg += `<text x="${p.x}" y="${p.y + 4}" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="#f1f5f9" pointer-events="none">${isNfa ? 'q' + n.id : 'D' + n.id}</text>`;
+        nodesSvg += '</g>';
+      });
+
+      svg.innerHTML = defs + edgesSvg + nodesSvg;
+      svg.querySelectorAll('.graph-node').forEach(g => {
+        const n = byId[g.getAttribute('data-id')];
+        g.addEventListener('mouseenter', () => showNodeTooltip(n, isNfa));
+        g.addEventListener('mouseleave', hideNodeTooltip);
+      });
+      highlightActiveAutomatonNode();
+    }
+
+    function highlightActiveAutomatonNode() {
+      const t = activeTrace();
+      const rec = t[state.currentStep];
+      if (!rec || !state.nfa) return;
+      const isNfa = state.activeAutomatonView === 'NFA';
+      const nodes = isNfa ? state.nfa.stateList : state.dfa.states;
+
+      nodes.forEach(n => {
+        const circle = $(`circle-node-${n.id}`);
+        if (!circle) return;
+        const active = rec.stateId === n.id;
+        if (active) {
+          if (rec.result === 'BACKTRACK' || rec.result === 'REJECT') {
+            circle.setAttribute('fill', '#ef4444');
+            circle.setAttribute('stroke', '#fca5a5');
+            circle.setAttribute('class', 'backtrack-flash');
+          } else if (rec.result === 'ACCEPT') {
+            circle.setAttribute('fill', '#059669');
+            circle.setAttribute('stroke', '#34d399');
+            circle.setAttribute('class', 'pulsing-state');
+          } else {
+            circle.setAttribute('fill', '#0284c7');
+            circle.setAttribute('stroke', '#38bdf8');
+            circle.setAttribute('class', 'pulsing-state');
+          }
+        } else {
+          circle.setAttribute('fill', '#0f172a');
+          circle.setAttribute('stroke', n.isAccept ? '#10b981' : '#334155');
+          circle.removeAttribute('class');
+        }
+      });
+
+      // Link the trace to the parse tree: which AST node owns the current NFA state?
+      if (isNfa) {
+        const st = state.nfa.states[rec.stateId];
+        state.activeAstNodeId = st ? st.astNodeId : null;
+      } else {
+        state.activeAstNodeId = null;
+      }
+      refreshAstStyles();
+    }
+
+    function showNodeTooltip(node, isNfa) {
+      const tip = $('graphNodeTooltip');
+      tip.classList.remove('hidden');
+      tip.innerHTML = `
+        <div class="font-bold text-white mb-0.5">${isNfa ? `NFA State q${node.id}` : `DFA State D${node.id}`}</div>
+        <div class="text-[11px] text-slate-400">Accepting: <span class="${node.isAccept ? 'text-emerald-400' : 'text-slate-500'} font-bold">${node.isAccept ? 'YES' : 'NO'}</span></div>
+        ${isNfa && node.astNodeId ? `<div class="text-[11px] text-cyan-400">AST node #${node.astNodeId}</div>` : ''}
+        ${!isNfa ? `<div class="text-[11px] text-cyan-400">NFA set: ${escapeHtml(node.label)}</div>` : ''}`;
+    }
+
+    function hideNodeTooltip() {
+      $('graphNodeTooltip').classList.add('hidden');
+    }
+
+    /**
+     * --- TRACE TABLE ---
+     */
+    function renderTraceTable() {
+      const tbody = $('traceTableBody');
+      tbody.innerHTML = '';
+      const t = activeTrace();
+      const isNfa = state.activeTraceTab === 'NFA';
+
+      const frag = document.createDocumentFragment();
+      t.forEach((rec, idx) => {
+        const row = document.createElement('div');
+        row.id = `trace-row-${idx}`;
+        row.onclick = () => seekToStep(idx);
+
+        let badgeClass = 'text-slate-400';
+        if (rec.result === 'ACCEPT') badgeClass = 'text-emerald-400 font-bold';
+        if (rec.result === 'BACKTRACK' || rec.result === 'REJECT') badgeClass = 'text-red-400 font-bold';
+        if (rec.result === 'TRY') badgeClass = 'text-cyan-400';
+
+        row.innerHTML = `
+          <span class="col-span-2 font-mono text-[11px]">#${rec.step}</span>
+          <span class="col-span-2 font-mono text-[11px] truncate">i=${rec.strIdx} ('${escapeHtml(displayChar(rec.char))}')</span>
+          <span class="col-span-3 font-mono text-[11px] truncate">${isNfa ? `q${rec.stateId}` : `D${rec.stateId}`}</span>
+          <span class="col-span-5 text-[11px] truncate ${badgeClass}" title="${escapeHtml(rec.note)}">
+            ${rec.isBacktrack ? '↺ ' : ''}${escapeHtml(rec.note)}
+          </span>`;
+        frag.appendChild(row);
+      });
+      tbody.appendChild(frag);
+      highlightTraceTableRow();
+    }
+
+    function highlightTraceTableRow(shouldScroll = false) {
+      const t = activeTrace();
+      for (let i = 0; i < t.length; i++) {
+        const row = $(`trace-row-${i}`);
+        if (!row) continue;
+        if (i === state.currentStep) {
+          row.className = 'grid grid-cols-12 py-1 px-3 cursor-pointer bg-cyan-950/80 border-l-4 border-cyan-400 text-cyan-200 font-bold';
+          if (shouldScroll) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        } else {
+          row.className = 'grid grid-cols-12 py-1 px-3 cursor-pointer hover:bg-slate-800/60 items-center text-slate-400';
+        }
+      }
+    }
+
+    /**
+     * --- DIAGNOSTIC EXPLANATION GENERATOR ---
+     */
+    function generateDiagnosticExplanation(pcreRun, dfaRun) {
+      const box = $('narrativeExplanationBox');
+      const str = state.testStr;
+      const pattern = state.regexStr;
+      let html = '';
+
+      if (pcreRun.aborted) {
+        html += `
+          <div class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0"></span>
+            <p><strong>Overall Verdict: Aborted.</strong> The backtracking engine used up its 5,000-step budget on <code class="text-cyan-300 font-mono">/${escapeHtml(pattern)}/</code> against <code class="text-red-300 font-mono">"${escapeHtml(str)}"</code> without reaching a decision, so it reports neither accept nor reject.</p>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0"></span>
+            <p><strong>The DFA decides it anyway:</strong> it consumed the string in <strong>${dfaRun.totalSteps} steps</strong> and ${dfaRun.success ? '<strong>accepted</strong>' : '<strong>rejected</strong>'} it.</p>
+          </div>`;
+      } else if (pcreRun.success) {
+        html += `
+          <div class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0"></span>
+            <p><strong>Overall Verdict: Accepted.</strong> The pattern <code class="text-cyan-300 font-mono">/${escapeHtml(pattern)}/</code> matched the whole input <code class="text-emerald-300 font-mono">"${escapeHtml(str)}"</code>.</p>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0"></span>
+            <p><strong>Automaton Reasoning:</strong> the backtracking NFA matcher took ${pcreRun.totalSteps} logged steps. The equivalent DFA processed the string deterministically in exactly <strong>${dfaRun.totalSteps} transitions</strong> with no backtracking.</p>
+          </div>`;
+      } else {
+        const failPos = pcreRun.maxReached;
+        const failChar = failPos < str.length ? `'${displayChar(str[failPos])}'` : 'end-of-input (EOF)';
+        html += `
+          <div class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></span>
+            <p><strong>Overall Verdict: Rejected.</strong> The input <code class="text-red-300 font-mono">"${escapeHtml(str)}"</code> does not satisfy <code class="text-cyan-300 font-mono">/${escapeHtml(pattern)}/</code>.</p>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0"></span>
+            <p><strong>Point of Failure:</strong> the furthest the engine ever got was string index <strong>${failPos}</strong>, at symbol <strong>${escapeHtml(failChar)}</strong>. It had consumed <code class="text-slate-200 font-mono">"${escapeHtml(str.slice(0, failPos))}"</code>, and no path from there leads to an accept state.</p>
+          </div>`;
+      }
+
+      const g = state.growth;
+      if (g && g.cls.kind === 'exponential') {
+        html += `
+          <div class="p-2.5 rounded-lg bg-red-950/40 border border-red-800/60 text-red-200 text-xs">
+            <strong>Vulnerability Diagnosis (ReDoS):</strong> measured on the family shown in the growth chart, the backtracking step count grows <strong>exponentially</strong> (${escapeHtml(g.cls.detail)}), while the DFA stays linear. The usual cause is overlapping quantifiers such as a nested loop.
+          </div>`;
+      } else if (g && g.cls.kind === 'polynomial') {
+        html += `
+          <div class="p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-200 text-xs">
+            <strong>Complexity Assessment:</strong> backtracking grows <strong>polynomially</strong> (${escapeHtml(g.cls.detail)}) on the growth family. Not catastrophic, but several adjacent quantifiers are competing for the same characters.
+          </div>`;
+      } else {
+        html += `
+          <div class="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 text-xs">
+            <strong>Complexity Assessment:</strong> no blow-up was observed on the growth family (${pcreRun.backtrackCount} retries on your input). This does not prove the pattern is safe for every input.
+          </div>`;
+      }
+      box.innerHTML = html;
+    }
+
+    /**
+     * --- EXPORT JSON TRACE LOG ---
+     */
+    function exportTraceJson() {
+      const t = activeTrace();
+      const exportData = {
+        metadata: {
+          project: "Regex Engine That Explains Itself",
+          authors: ["Rithvik Sarvesh M (24BCT0001)", "Tharun R G (24BCT0203)"],
+          course: "BCSE307P - Compiler Design Lab",
+          institution: "VIT Vellore",
+          regexPattern: state.regexStr,
+          inputString: state.testStr,
+          matcherMode: state.activeTraceTab,
+          timestamp: new Date().toISOString()
+        },
+        telemetry: {
+          totalSteps: t.length,
+          backtrackCount: state.nfaTrace.filter(r => r.isBacktrack).length,
+          policyComparison: state.policyResults,
+          growth: state.growth ? { family: state.growth.family, classification: state.growth.cls, points: state.growth.points } : null
+        },
+        executionTrace: t
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", `regex_trace_${state.activeTraceTab.toLowerCase()}_${Date.now()}.json`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    /**
+     * --- INPUT HANDLING ---
+     */
+    function showSetupError(html) {
+      const el = $('setupError');
+      if (html) {
+        el.innerHTML = html;
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+        el.innerHTML = '';
+      }
+    }
+
+    function loadPreset(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+      $('regexInput').value = p.regex;
+      $('stringInput').value = p.str;
+      $('stringLengthPill').innerText = `Length: ${p.str.length} chars`;
+      runConfiguredAnalysis();
+    }
+
+    function submitManualAnalysis(event) {
+      event.preventDefault();
+      runConfiguredAnalysis();
+    }
+
+    function runConfiguredAnalysis() {
+      const result = executePipeline({ fresh: true });
+      if (!result.ok) {
+        showSetupError(result.error);
+        return;
+      }
+      showSetupError(null);
+      state.analysisStarted = true;
+      const results = $('analysisResults');
+      results.classList.remove('hidden');
+      results.setAttribute('aria-hidden', 'false');
+      results.inert = false;
+      refreshIcons();
+    }
+
+    function scheduleLiveUpdate() {
+      if (!state.analysisStarted) return;
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(() => {
+        const result = executePipeline();
+        showSetupError(result.ok ? null : result.error);
+      }, 220);
+    }
+
+    // --- INITIALIZATION ---
+    window.onload = function () {
+      $('regexInput').addEventListener('input', scheduleLiveUpdate);
+      $('stringInput').addEventListener('input', () => {
+        $('stringLengthPill').innerText = `Length: ${$('stringInput').value.length} chars`;
+        scheduleLiveUpdate();
+      });
+      updateModeButtons();
+      refreshIcons();
+    };
+  </script>
+</body>
+</html>
